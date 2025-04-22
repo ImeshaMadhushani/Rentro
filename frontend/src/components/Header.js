@@ -3,119 +3,71 @@ import { Link } from "react-router-dom";
 import logo from "../assests/logo.png";
 
 const Header = () => {
-    // Bootstrap’s JS isn’t loaded in a typical CRA/​Vite setup, so we
-    // control the “collapse” state with React instead
-    const [open, setOpen] = useState(false);
-
-    const toggle = () => setOpen((p) => !p);
+    const [isOpen, setIsOpen] = useState(false);
+    const navLinks = [
+        { to: "/home", text: "Home" },
+        { to: "/vehicles", text: "Vehicles" },
+        { to: "/details", text: "Details" },
+        { to: "/about", text: "About Us" },
+        { to: "/contact", text: "Contact Us" },
+        { to: "/rewards", text: "Reward" },
+    ];
 
     return (
-        <>
-            {/* Hover underline effect (your original CSS) */}
-            <style>{`
-        .nav-link-hover {
-          position: relative;
-          transition: color 0.3s ease;
-        }
-        .nav-link-hover:hover { color: #0d6efd; }
-        .nav-link-hover::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          bottom: -4px;
-          height: 2px;
-          width: 0;
-          background-color: #0d6efd;
-          transition: width 0.3s ease;
-        }
-        .nav-link-hover:hover::after { width: 100%; }
-      `}</style>
+        <header className="navbar navbar-expand-md bg-white shadow-sm sticky-top py-0">
+            <div className="container">
+                {/* logo */}
+                <Link to="/home" className="navbar-brand d-flex align-items-center py-2">
+                    <img src={logo} alt="Rentro Logo" height={64} />
+                </Link>
 
-            <header className="py-3 border-bottom shadow-sm bg-white sticky-top">
-                <div className="container d-flex justify-content-between align-items-center">
-                    {/* Logo */}
-                    <Link
-                        to="/home"
-                        className="text-decoration-none d-flex align-items-center"
-                    >
-                        <img src={logo} alt="Rentro Logo" height="70" className="me-2" />
-                    </Link>
+                {/* hamburger */}
+                <button
+                    className="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#rentroNav"
+                    aria-controls="rentroNav"
+                    aria-expanded={isOpen}
+                    aria-label="Toggle navigation"
+                    onClick={() => setIsOpen(!isOpen)}
+                >
+                    {/* you can replace this with Bootstrap’s default by removing the span */}
+                    <span className="navbar-toggler-icon"></span>
+                </button>
 
-                    {/* Hamburger button – visible < md */}
-                    <button
-                        className="navbar-toggler d-md-none border-0"
-                        type="button"
-                        aria-label="Toggle navigation"
-                        onClick={toggle}
-                    >
-                        {/* Bootstrap “hamburger” icon (three bars) */}
-                        <span className="navbar-toggler-icon">
-                            {/* Using simple bars so we don’t depend on Bootstrap JS icons */}
-                            <div style={{ width: 22, height: 2, background: "#000" }} />
-                            <div
-                                style={{
-                                    width: 22,
-                                    height: 2,
-                                    background: "#000",
-                                    margin: "4px 0",
-                                }}
-                            />
-                            <div style={{ width: 22, height: 2, background: "#000" }} />
-                        </span>
-                    </button>
-
-                    {/* Navigation – always rendered, but collapse on small screens */}
-                    <nav
-                        className={`${open ? "d-block" : "d-none"
-                            } d-md-flex gap-4 flex-column flex-md-row mt-3 mt-md-0`}
-                    >
-                        {/* Links */}
-                        <Link
-                            to="/home"
-                            className="text-dark text-decoration-none nav-link-hover"
-                            onClick={() => setOpen(false)}
-                        >
-                            Home
-                        </Link>
-                        <Link
-                            to="/vehicles"
-                            className="text-dark text-decoration-none nav-link-hover"
-                            onClick={() => setOpen(false)}
-                        >
-                            Vehicles
-                        </Link>
-                        <Link
-                            to="/details"
-                            className="text-dark text-decoration-none nav-link-hover"
-                            onClick={() => setOpen(false)}
-                        >
-                            Details
-                        </Link>
-                        <Link
-                            to="/about"
-                            className="text-dark text-decoration-none nav-link-hover"
-                            onClick={() => setOpen(false)}
-                        >
-                            About Us
-                        </Link>
-                        <Link
-                            to="/contact"
-                            className="text-dark text-decoration-none nav-link-hover"
-                            onClick={() => setOpen(false)}
-                        >
-                            Contact Us
-                        </Link>
-                        <Link
-                            to="/rewards"
-                            className="text-dark text-decoration-none nav-link-hover"
-                            onClick={() => setOpen(false)}
-                        >
-                            Reward
-                        </Link>
-                    </nav>
+                {/* links */}
+                <div
+                    className={`collapse navbar-collapse${isOpen ? " show" : ""}`}
+                    id="rentroNav"
+                >
+                    <ul className="navbar-nav ms-auto mb-2 mb-md-0">
+                        {navLinks.map(({ to, text }) => (
+                            <li className="nav-item" key={to}>
+                                <Link
+                                    to={to}
+                                    className="nav-link nav-link-hover"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    {text}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
-            </header>
-        </>
+            </div>
+
+            {/* hover underline & basic custom styling */}
+            <style>{`
+        .nav-link-hover { position:relative; transition:color .3s }
+        .nav-link-hover:hover { color:#0d6efd }
+        .nav-link-hover::after{
+          content:""; position:absolute; left:0; bottom:0;
+          height:2px; width:0; background:#0d6efd; transition:width .3s
+        }
+        .nav-link-hover:hover::after{ width:100% }
+      `}</style>
+        </header>
     );
 };
 
