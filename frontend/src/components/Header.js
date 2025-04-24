@@ -1,18 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assests/logo.png";
-import { FiLogOut } from "react-icons/fi"; // Using Feather icons from react-icons
+import { FiLogOut } from "react-icons/fi";
+import { FaCoins } from "react-icons/fa";
+import { FiUser } from "react-icons/fi";
 
 const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [rewardPoints, setRewardPoints] = useState(0);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const points = localStorage.getItem('rewardPoints') || 0;
+        setRewardPoints(parseInt(points));
+    }, []);
 
     const navLinks = [
         { to: "/home", text: "Home" },
         { to: "/vehicles", text: "Vehicles" },
         { to: "/about", text: "About Us" },
         { to: "/contact", text: "Contact Us" },
-        { to: "/rewards", text: "Reward" },
+        {
+            to: "/rewards",
+            text: (
+                <span className="d-flex align-items-center">
+                    <FaCoins className="me-1 text-warning" />
+                    <span className="badge bg-primary rounded-pill">
+                        {rewardPoints}
+                    </span>
+                </span>
+            )
+        },
+        {
+            to: "/profile",
+            text: (
+                <span className="d-flex align-items-center">
+                    <FiUser className="me-1" />
+                    <span className="d-none d-md-inline">Profile</span>
+                </span>
+            )
+        }
     ];
 
     const handleLogout = () => {
@@ -22,19 +49,16 @@ const Header = () => {
     };
 
     return (
-        <header className="navbar navbar-expand-md bg-white shadow-sm sticky-top py-0">
-            <div className="container">
-                {/* logo */}
+        <header className="navbar navbar-expand-lg bg-white shadow-sm sticky-top py-0">
+            <div className="container-fluid px-3 px-md-4">
                 <Link to="/home" className="navbar-brand d-flex align-items-center py-2">
-                    <img src={logo} alt="Rentro Logo" height={64} />
+                    <img src={logo} alt="Rentro Logo" height={48} className="d-md-none" />
+                    <img src={logo} alt="Rentro Logo" height={64} className="d-none d-md-block" />
                 </Link>
 
-                {/* hamburger */}
                 <button
-                    className="navbar-toggler"
+                    className="navbar-toggler border-0"
                     type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#rentroNav"
                     aria-controls="rentroNav"
                     aria-expanded={isOpen}
                     aria-label="Toggle navigation"
@@ -43,70 +67,75 @@ const Header = () => {
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
-                {/* links */}
-                <div
-                    className={`collapse navbar-collapse${isOpen ? " show" : ""}`}
-                    id="rentroNav"
-                >
-                    <ul className="navbar-nav ms-auto mb-2 mb-md-0 align-items-center">
+                <div className={`collapse navbar-collapse${isOpen ? " show" : ""}`} id="rentroNav">
+                    <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
                         {navLinks.map(({ to, text }) => (
-                            <li className="nav-item" key={to}>
+                            <li className="nav-item px-1 px-md-2" key={to}>
                                 <Link
                                     to={to}
-                                    className="nav-link nav-link-hover"
+                                    className="nav-link nav-link-hover d-flex align-items-center py-3 py-md-2"
                                     onClick={() => setIsOpen(false)}
                                 >
                                     {text}
                                 </Link>
                             </li>
                         ))}
-                        
-                        
-                        {/* Logout button with icon */}
-                        <li className="nav-item">
+
+                        <li className="nav-item ps-1 ps-md-2">
                             <button
-                                className="btn btn-outline-danger ms-1 ms-md-2 d-flex align-items-center"
+                                className="btn btn-outline-danger d-flex align-items-center py-2"
                                 onClick={handleLogout}
                             >
-                                <FiLogOut className="me-2" />
-                                Logout
+                                <FiLogOut className="me-1 me-md-2" />
+                                <span className="d-none d-md-inline">Logout</span>
                             </button>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            {/* Custom CSS remains the same */}
             <style>{`
-                .nav-link-hover { 
-                    position:relative; 
-                    transition:color .3s 
+                .nav-link-hover {
+                    position: relative;
+                    transition: color 0.3s;
+                    white-space: nowrap;
                 }
-                .nav-link-hover:hover { 
-                    color:#0d6efd 
+                .nav-link-hover:hover {
+                    color: #0d6efd;
                 }
-                .nav-link-hover::after{
-                    content:""; 
-                    position:absolute; 
-                    left:0; 
-                    bottom:0;
-                    height:2px; 
-                    width:0; 
-                    background:#0d6efd; 
-                    transition:width .3s
+                .nav-link-hover::after {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    bottom: 0;
+                    height: 2px;
+                    width: 0;
+                    background: #0d6efd;
+                    transition: width 0.3s;
                 }
-                .nav-link-hover:hover::after{ 
-                    width:100% 
+                .nav-link-hover:hover::after {
+                    width: 100%;
                 }
-                .disabled {
-                    color: #dee2e6 !important;
-                    pointer-events: none;
+                .navbar-toggler:focus {
+                    box-shadow: none;
                 }
-                @media (max-width: 767.98px) {
+                @media (max-width: 991.98px) {
+                    .navbar-collapse {
+                        padding: 1rem;
+                        background: white;
+                        border-radius: 0.5rem;
+                        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+                    }
+                    .nav-item {
+                        border-bottom: 1px solid #f0f0f0;
+                    }
+                    .nav-item:last-child {
+                        border-bottom: none;
+                    }
                     .btn-outline-danger {
                         width: 100%;
                         text-align: left;
-                        padding-left: 1rem;
+                        padding: 0.5rem 1rem;
                         border: none;
                         color: #dc3545;
                         background-color: transparent;
