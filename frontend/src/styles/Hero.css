@@ -1,0 +1,55 @@
+/* hero container */
+.hero-wrapper {
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    color: #fff;
+    border-radius: 1rem;
+}
+
+.form-label {
+    color: #000;
+}
+
+/* blurred decorative car */
+.hero-car-img {
+    position: absolute;
+    right: 40%;
+    bottom: 8rem;
+    width: 440px;
+    max-width: 45vw;
+    filter: blur(3px);
+    user-select: none;
+    pointer-events: none;
+    transform: translateY(50%);
+}
+
+@media (min-width: 1400px) {
+    .hero-car-img {
+        width: 520px;
+    }
+}
+
+/* booking card */
+.booking-card {
+    border-radius: 1rem;
+}
+
+.booking-card .form-label {
+    font-size: 0.875rem;
+}
+
+.booking-card .form-select,
+.booking-card .form-control {
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+}
+
+/* utility overrides */
+.btn-warning {
+    border: none;
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
