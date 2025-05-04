@@ -28,6 +28,7 @@ const SignUp = () => {
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/signup`, formData);
             setMessage("✅ " + res.data);
             setFormData({ fullName: "", email: "", phone: "", password: "" });
+            e.target.reset();
         } catch (error) {
             if (error.response) {
                 setMessage("❌ " + error.response.data);
