@@ -115,8 +115,8 @@ const SignUp = () => {
 
                         <form onSubmit={handleSubmit}>
                             {["fullName", "Email", "Phone", "Password"].map((label) => {
-                                const id = label.toLowerCase().split(" ")[0];
-                                const type = id === "fullName" ? "fullName" :id === "email" ? "email" : id === "password" ? "password" : id === "phone" ? "tel" : "text";
+                                const id = label === "fullName" ? "fullName" : label.toLowerCase().split(" ")[0];
+                                const type = id ===  "email" ? "email" : id === "password" ? "password" : id === "phone" ? "tel" : "text";
                                 return (
                                     <div className="mb-3" key={id}>
                                         <label htmlFor={id} className="form-label text-muted small fw-semibold">
