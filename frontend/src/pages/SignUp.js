@@ -99,7 +99,7 @@ const SignUp = () => {
                                 whileHover={{ scale: 1.1 }}
                                 animate={{ y: [0, -4, 0] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                onChange={handleChange}
+                                //onChange={handleChange}
                             />
                         </div>
 
@@ -114,9 +114,10 @@ const SignUp = () => {
                         </div>
 
                         <form onSubmit={handleSubmit}>
-                            {["fullName", "Email", "Phone", "Password"].map((label) => {
-                                const id = label.toLowerCase().split(" ")[0];
-                                const type = id === "fullName" ? "fullName" :id === "email" ? "email" : id === "password" ? "password" : id === "phone" ? "tel" : "text";
+                            {["fullName", "email", "phone", "password"].map((fieldId) => {
+                                const label = fieldId.charAt(0).toUpperCase() + fieldId.slice(1);
+                                const id = label === "fullName" ? "fullName" : label.toLowerCase().split(" ")[0];
+                                const type = id === "email" ? "email" : id === "password" ? "password" : id === "phone" ? "tel" : "text";
                                 return (
                                     <div className="mb-3" key={id}>
                                         <label htmlFor={id} className="form-label text-muted small fw-semibold">

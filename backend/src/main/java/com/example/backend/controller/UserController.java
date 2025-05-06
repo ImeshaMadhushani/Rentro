@@ -1,43 +1,44 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.LoginDTO;
 import com.example.backend.dto.UserDTO;
 import com.example.backend.model.User;
-import com.example.backend.repository.UserRepository;
+import com.example.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*") // Allow React to access this
+@CrossOrigin(origins = "*")
 public class UserController {
-
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
-        if (userRepository.existsByEmail(userDTO.getEmail())) {
-            return ResponseEntity.badRequest().body("Email is already in use.");
+    public ResponseEntity<String> registerUser(@RequestBody UserDTO userDTO) {
+        String result = userService.registerUser(userDTO);
+
+        if (result.equals("Email already registered")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
 
-User user = new User();
-    user.setFullName(userDTO.getFullName());
-    user.setEmail(userDTO.getEmail());
-    user.setPhone(userDTO.getPhone());
-    user.setPassword(userDTO.getPassword());
-    userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
 
-        if (user.getFullName() == null || user.getEmail() == null || user.getPhone() == null || user.getPassword() == null) {
-            return ResponseEntity.badRequest().body("All fields are required.");
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody LoginDTO loginDTO) {
+        Optional<User> user = userService.authenticateUser(loginDTO);
+
+        if (user.isPresent()) {
+            // You might want to return a token here in a real application
+            return ResponseEntity.ok().body("Login successful");
         }
 
-        if (user.getPassword().length() < 6) {
-            return ResponseEntity.badRequest().body("Password must be at least 6 characters long.");
-}
-
-
-        userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully!");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("Invalid email or password");
     }
 }
