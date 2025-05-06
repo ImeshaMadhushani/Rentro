@@ -11,19 +11,22 @@ const Login = () => {
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
+    const API_URL = process.env.REACT_APP_API_URL
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
         try {
-            const response = await axios.post(
-                `${process.env.REACT_APP_API_URL}/api/users/login`,
-                { email, password },
-                {
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+            const response = await axios.post(`${API_URL}/api/users/login`, { email, password })
+                .then((response) => {
+                    if (response.data.token) {
+                        localStorage.setItem("user", JSON.stringify(response.data));
+                    }
+                    return response.data;
+                });
+            
             
 
             const data = response.data;
