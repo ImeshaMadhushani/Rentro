@@ -1,59 +1,51 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import car from "../assests/car.png";
 import logo from "../assests/logo.png";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
-    const API_URL = process.env.REACT_APP_API_URL
+    const API_URL = process.env.REACT_APP_API_URL;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(""); // Clear previous errors
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
         try {
-            const response = await axios.post(`${API_URL}/api/users/login`, { email, password })
-                .then((response) => {
-                    if (response.data.token) {
-                        localStorage.setItem("user", JSON.stringify(response.data));
-                    }
-                    return response.data;
-                });
-            
-            
+            const response = await axios.post(`${API_URL}/api/users/login`, { email, password });
 
-            const data = response.data;
-
-            if (response.status === 200) {
+            // If we reach here, the request was successful
+            if (response.data.token) {
+                localStorage.setItem("user", JSON.stringify(response.data));
                 alert("Login successful");
-                navigate("/home"); 
+                navigate("/home");
             } else {
-                setError(data.message || "Login failed");
+                setError("Login failed: No authentication token received");
             }
+
             e.target.reset();
         } catch (err) {
             let errorMessage = "An error occurred. Please try again.";
+
             if (err.response && err.response.data && err.response.data.message) {
-                errorMessage = err.response.data.message; 
+                errorMessage = err.response.data.message;
             } else if (err.request) {
                 errorMessage = "No response from server. Check your connection.";
             } else {
                 errorMessage = err.message;
             }
+
             setError(errorMessage);
             console.error("Login error:", err);
-
         }
     };
 
-    
     return (
         <div className="min-vh-100 d-flex justify-content-center align-items-center bg-body-tertiary px-3 py-4">
             <style>
@@ -129,7 +121,7 @@ const Login = () => {
                         <div className="mb-4">
                             <h2 className="fw-bold text-dark mb-2 fs-4 fs-md-3">Welcome Back</h2>
                             <p className="text-muted small mb-0">
-                                Don’t have an account?{" "}
+                                Don't have an account?{" "}
                                 <Link to="/" className="text-decoration-none text-primary fw-semibold">
                                     Sign up here
                                 </Link>
