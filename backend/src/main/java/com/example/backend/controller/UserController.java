@@ -1,9 +1,11 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.JwtResponse;
 import com.example.backend.dto.LoginDTO;
 import com.example.backend.dto.UserDTO;
 import com.example.backend.model.User;
 import com.example.backend.service.UserService;
+import com.example.backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @PostMapping("/signup")
     public ResponseEntity<String> registerUser(@RequestBody UserDTO userDTO) {
         String result = userService.registerUser(userDTO);
@@ -31,11 +36,19 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginDTO loginDTO) {
-        Optional<User> user = userService.authenticateUser(loginDTO);
+        Optional<User> userOptional = userService.authenticateUser(loginDTO);
 
-        if (user.isPresent()) {
-            // You might want to return a token here in a real application
-            return ResponseEntity.ok().body("Login successful");
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            String token = jwtUtil.generateToken(user);
+
+            JwtResponse jwtResponse = new JwtResponse(
+                    token,
+                    user.getId(),
+                    user.getFullName(),
+                    user.getEmail());
+
+            return ResponseEntity.ok(jwtResponse);
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
