@@ -12,7 +12,8 @@ const SignUp = () => {
         fullName: "",
         email: "",
         phone: "",
-        password: ""
+         password: "",
+         role: "CLIENT" // Default role
     });
 
     const [message, setMessage] = useState("");
@@ -27,7 +28,7 @@ const SignUp = () => {
         try {
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/signup`, formData);
             setMessage("✅ " + res.data);
-            setFormData({ fullName: "", email: "", phone: "", password: "" });
+            setFormData({ fullName: "", email: "", phone: "", password: "", role: "CLIENT" });
             e.target.reset();
         } catch (error) {
             if (error.response) {
@@ -136,6 +137,22 @@ const SignUp = () => {
                                     </div>
                                 );
                             })}
+
+                            {/* Add role selection */}
+                            <div className="mb-3">
+                                <label htmlFor="role" className="form-label text-muted small fw-semibold">
+                                    Account Type
+                                </label>
+                                <select
+                                    id="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                    className="form-select form-select-sm form-select-lg border-light shadow-sm"
+                                >
+                                    <option value="CLIENT">Client</option>
+                                    <option value="ADMIN">Admin</option>
+                                </select>
+                            </div>
 
                             <motion.button
                                 type="submit"

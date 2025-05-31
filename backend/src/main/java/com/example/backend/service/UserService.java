@@ -25,12 +25,16 @@ public class UserService {
             return "Email already registered";
         }
 
+        // Set default role to CLIENT if not specified
+        User.Role role = userDTO.getRole() != null ? userDTO.getRole() : User.Role.CLIENT;
+
         User user = new User();
         user.setFullName(userDTO.getFullName());
         user.setEmail(userDTO.getEmail());
         user.setPhone(userDTO.getPhone());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-
+        user.setRole(role);
+        
         userRepository.save(user);
 
         return "User registered successfully";

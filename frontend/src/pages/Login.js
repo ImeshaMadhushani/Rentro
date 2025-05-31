@@ -24,7 +24,12 @@ const Login = () => {
             if (response.data.token) {
                 localStorage.setItem("user", JSON.stringify(response.data));
                 alert("Login successful");
-                navigate("/home");
+                // Redirect based on role
+                if (response.data.role === "ADMIN") {
+                    navigate("/admin/dashboard");
+                } else {
+                    navigate("/home");
+                }
             } else {
                 setError("Login failed: No authentication token received");
             }

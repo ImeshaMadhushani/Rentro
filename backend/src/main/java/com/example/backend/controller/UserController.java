@@ -46,7 +46,8 @@ public class UserController {
                     token,
                     user.getId(),
                     user.getFullName(),
-                    user.getEmail());
+                    user.getEmail(),
+                    user.getRole().toString());
 
             return ResponseEntity.ok(jwtResponse);
         }
