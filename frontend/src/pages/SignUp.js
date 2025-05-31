@@ -1,10 +1,44 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import car from "../assests/car.png";
 import logo from "../assests/logo.png";
 import { motion } from "framer-motion";
+import axios from "axios";
+
 
 const SignUp = () => {
+
+     const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        phone: "",
+        password: ""
+    });
+
+    const [message, setMessage] = useState("");
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.id]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        console.log("Form data being sent:", formData);
+        try {
+            const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/signup`, formData);
+            setMessage("✅ " + res.data);
+            setFormData({ fullName: "", email: "", phone: "", password: "" });
+            e.target.reset();
+        } catch (error) {
+            if (error.response) {
+                setMessage("❌ " + error.response.data);
+            } else {
+                setMessage("❌ Error: Could not connect to server.");
+            }
+        }
+    };
+
+    
     return (
         <div className="min-vh-100 d-flex justify-content-center align-items-center bg-body-tertiary px-3 py-4 flex-column">
             <style>
@@ -65,6 +99,7 @@ const SignUp = () => {
                                 whileHover={{ scale: 1.1 }}
                                 animate={{ y: [0, -4, 0] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                //onChange={handleChange}
                             />
                         </div>
 
@@ -78,9 +113,10 @@ const SignUp = () => {
                             </p>
                         </div>
 
-                        <form>
-                            {["Full Name", "Email Address", "Phone", "Password"].map((label) => {
-                                const id = label.toLowerCase().split(" ")[0];
+                        <form onSubmit={handleSubmit}>
+                            {["fullName", "email", "phone", "password"].map((fieldId) => {
+                                const label = fieldId.charAt(0).toUpperCase() + fieldId.slice(1);
+                                const id = label === "fullName" ? "fullName" : label.toLowerCase().split(" ")[0];
                                 const type = id === "email" ? "email" : id === "password" ? "password" : id === "phone" ? "tel" : "text";
                                 return (
                                     <div className="mb-3" key={id}>
@@ -90,6 +126,8 @@ const SignUp = () => {
                                         <motion.input
                                             type={type}
                                             id={id}
+                                            value={formData[id]}
+                                            onChange={handleChange}
                                             placeholder={`Enter your ${label.toLowerCase()}`}
                                             className="form-control form-control-sm form-control-lg border-light shadow-sm small-placeholder"
                                             required
@@ -108,6 +146,12 @@ const SignUp = () => {
                                 Sign Up
                             </motion.button>
                         </form>
+
+                        {message && (
+                            <div className="alert mt-3" role="alert">
+                                {message}
+                            </div>
+                        )}
                     </div>
 
                     <div className="text-center mt-4 small text-muted">
