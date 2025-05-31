@@ -44,6 +44,15 @@ function App() {
           </ProtectedRoute>
         } />
 
+{/* 
+      // Accessible to both admins and clients
+        <Route path="/profile" element={
+          <ProtectedRoute roles={["ADMIN", "CLIENT"]}>
+            <UserProfile />
+          </ProtectedRoute>
+        } /> */}
+        
+
         {/* Protected routes */}
         {/* <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} /> */}
         <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
