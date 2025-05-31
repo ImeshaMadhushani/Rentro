@@ -49,7 +49,7 @@ const Vehicles = () => {
             model: vehicle.name,
             category: vehicle.category,
             type: vehicle.type,
-            imageUrl: vehicle.image || car,
+            imageUrl: vehicle.image || car,  // This will now be a Firebase URL
             rating: vehicle.rating || 4.0,
             dailyPrice: vehicle.dailyPrice,
             transmission: vehicle.transmission,
