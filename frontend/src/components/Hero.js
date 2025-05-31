@@ -4,6 +4,7 @@ import React, { useState } from "react";
 //import 'leaflet/dist/leaflet.css';
 import '../styles/Hero.css';
 import car from "../assests/car.png";
+import { Link } from 'react-router-dom';
 
 // Fix Leaflet default icon issue
 /* delete L.Icon.Default.prototype._getIconUrl;
@@ -122,10 +123,12 @@ const Hero = () => {
               Discover the perfect car for every occasion. Whether you’re going on a family
               trip, a business meeting, or a weekend getaway, Rentro has the ideal vehicle
               for you.
-            </p>
+             </p>
+             <Link to="/vehicles">
             <button className="btn btn-warning fw-semibold px-4 py-2 rounded-pill shadow-sm">
               View All Cars
-            </button>
+               </button>
+             </Link>
           </div>
 
           {/* form */}
