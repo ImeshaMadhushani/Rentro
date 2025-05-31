@@ -5,6 +5,7 @@ import axios from 'axios';
 import { FiMenu, FiX, FiLogOut, FiHome,FiUsers, FiCalendar, FiPieChart } from 'react-icons/fi';
 import { FaCar } from 'react-icons/fa';
 import logo from '../assests/logo.png';
+import ManageVehicles from './ManageVehicles';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -286,7 +287,7 @@ const AdminDashboard = () => {
 };
 
 // Responsive components for other tabs
-const ManageVehicles = ({ isMobile }) => (
+/* const ManageVehicles = ({ isMobile }) => (
     <>
         <h4 className="mb-3 mb-md-4 d-flex align-items-center">
             <FaCar className="me-2" /> Manage Vehicles
@@ -331,7 +332,9 @@ const ManageVehicles = ({ isMobile }) => (
             </div>
         </div>
     </>
-);
+); */
+
+<ManageVehicles/>
 
 const ManageUsers = ({ isMobile }) => (
     <>
