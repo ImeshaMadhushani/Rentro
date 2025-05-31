@@ -8,22 +8,26 @@ import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-// API configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const VEHICLES_API = `${API_BASE_URL}/api/vehicles`;
 
 const Vehicles = () => {
     // Filter states
-    const [selectedGroup, setSelectedGroup] = useState('All vehicles');
-    const [selectedBrand, setSelectedBrand] = useState(null);
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [priceRange, setPriceRange] = useState([0, 100]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        type: null,
+        brand: null,
+        category: null,
+        minPrice: null,
+        maxPrice: null,
+        searchQuery: '',
+        page: 0,
+        size: 12,
+        sortBy: 'brand',
+        sortDirection: 'ASC'
+    });
 
     // Data states
     const [vehicles, setVehicles] = useState([]);
-    const [filteredVehicles, setFilteredVehicles] = useState([]);
     const [brands, setBrands] = useState([]);
     const [categories, setCategories] = useState([]);
     const [types, setTypes] = useState([]);
@@ -35,251 +39,163 @@ const Vehicles = () => {
         totalPages: 1,
         totalElements: 0
     });
+    const [showFilters, setShowFilters] = useState(false);
 
-    // Map backend fields to frontend expected format
-    // Updated mapVehicleData function to handle your database schema
+    // Simplified mapping function - no need to swap category/type
     const mapVehicleData = (vehicle) => {
-        // Map database category/type to frontend expectations
-        const categoryMap = {
-            'Luxury': 'Luxury',
-            'Standard': 'Mid Range',
-            'Economy': 'Low Budget'
-        };
-
-        // Your database has category as vehicle type and type as category
-        const actualType = vehicle.category; // SUV, Sedan, Hatchback
-        const actualCategory = categoryMap[vehicle.type] || vehicle.type; // Luxury, Mid Range, Low Budget
-
         return {
-            id: vehicle.id || 0,
+            id: vehicle.id,
             brand: vehicle.brand,
-            model: vehicle.name, // Backend uses 'name', frontend expects 'model'
-            category: actualCategory, // Map from type field
-            type: actualType, // Map from category field  
-            imageUrl: vehicle.image, // Backend uses 'image', frontend expects 'imageUrl'
+            model: vehicle.name,
+            category: vehicle.category,
+            type: vehicle.type,
+            imageUrl: vehicle.image || car,
             rating: vehicle.rating || 4.0,
-            dailyPrice: Math.round((vehicle.dailyPrice || 0) / 100), // Convert large numbers to daily rates
+            dailyPrice: vehicle.dailyPrice,
             transmission: vehicle.transmission,
             fuelType: vehicle.fuelType,
-            seats: vehicle.seatingCapacity, // Backend uses 'seatingCapacity', frontend expects 'seats'
-            available: vehicle.available === true || vehicle.available === 1 || vehicle.available === '1', // Handle different boolean formats
-            hasAC: vehicle.hasAC === true || vehicle.hasAC === 1 || vehicle.hasAC === '1', // Handle different boolean formats
+            seats: vehicle.seatingCapacity,
+            available: vehicle.available,
+            hasAC: vehicle.hasAC,
             description: vehicle.description
         };
     };
 
-    // Fetch initial data
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                setLoading(true);
+    // Fetch vehicles with filters
+    const fetchVehicles = async () => {
+        try {
+            setLoading(true);
 
-                
+            // Prepare filter params for backend
+            const params = {
+                brand: filters.brand,
+                type: filters.type,
+                category: filters.category,
+                minPrice: filters.minPrice,
+                maxPrice: filters.maxPrice,
+                page: filters.page,
+                size: filters.size,
+                sortBy: filters.sortBy,
+                sortDirection: filters.sortDirection
+            };
 
-                // Fetch in parallel for better performance
-                const [vehiclesRes, brandsRes, categoriesRes, typesRes] = await Promise.all([
-                    axios.get(`${VEHICLES_API}`),
-                    axios.get(`${VEHICLES_API}/brands`),
-                    axios.get(`${VEHICLES_API}/categories`),
-                    axios.get(`${VEHICLES_API}/types`)
-                ]);
-
-                console.log("Vehicles data:", vehiclesRes.data);
-
-                // Map the vehicle data to match frontend expectations
-                const mappedVehicles = vehiclesRes.data.map(mapVehicleData);
-
+            // Use search endpoint if search query exists
+            if (filters.searchQuery) {
+                const response = await axios.get(`${VEHICLES_API}/search`, {
+                    params: { q: filters.searchQuery }
+                });
+                const mappedVehicles = response.data.map(mapVehicleData);
                 setVehicles(mappedVehicles);
-                setFilteredVehicles(mappedVehicles);
-                setBrands(brandsRes.data.sort());
-                setCategories(categoriesRes.data);
-                setTypes(typesRes.data);
-
-                setError(null);
-            } catch (err) {
-                console.error('Error fetching initial data:', err);
-                setError('Failed to load data. Please try again later.');
-
-                // Fallback mock data with correct structure
-                const fallbackVehicles = [
-                    { id: 1, brand: "Suzuki", model: "Alto", category: "Low Budget", type: "Hatchback", imageUrl: car, rating: 4.1, dailyPrice: 25, transmission: "Manual", fuelType: "Petrol", seats: 5, available: true, hasAC: true },
-                    { id: 2, brand: "Toyota", model: "Corolla", category: "Mid Range", type: "Sedan", imageUrl: car, rating: 4.5, dailyPrice: 45, transmission: "Automatic", fuelType: "Petrol", seats: 5, available: true, hasAC: true },
-                    { id: 3, brand: "BMW", model: "X5", category: "Luxury", type: "SUV", imageUrl: car, rating: 4.8, dailyPrice: 85, transmission: "Automatic", fuelType: "Petrol", seats: 5, available: true, hasAC: true }
-                ];
-
-                setVehicles(fallbackVehicles);
-                setFilteredVehicles(fallbackVehicles);
-                setBrands(["Suzuki", "Toyota", "BMW"]);
-                setCategories(["Low Budget", "Mid Range", "Luxury"]);
-                setTypes(["Hatchback", "Sedan", "SUV"]);
-             } finally {
-                setLoading(false);
+            } else {
+                // Use filter endpoint
+                const response = await axios.post(`${VEHICLES_API}/filter`, params);
+                const mappedVehicles = response.data.content.map(mapVehicleData);
+                setVehicles(mappedVehicles);
+                setPagination({
+                    page: response.data.number,
+                    size: response.data.size,
+                    totalPages: response.data.totalPages,
+                    totalElements: response.data.totalElements
+                });
             }
-        };
+        } catch (err) {
+            console.error('Error fetching vehicles:', err);
+            setError('Failed to load vehicles. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchInitialData();
+    // Fetch filter options
+    const fetchFilterOptions = async () => {
+        try {
+            const [brandsRes, categoriesRes, typesRes] = await Promise.all([
+                axios.get(`${VEHICLES_API}/brands`),
+                axios.get(`${VEHICLES_API}/categories`),
+                axios.get(`${VEHICLES_API}/types`)
+            ]);
+
+            setBrands(brandsRes.data);
+            setCategories(categoriesRes.data);
+            setTypes(typesRes.data);
+        } catch (err) {
+            console.error('Error fetching filter options:', err);
+        }
+    };
+
+    // Initial data load
+    useEffect(() => {
+        const loadData = async () => {
+            await fetchFilterOptions();
+            await fetchVehicles();
+        };
+        loadData();
     }, []);
 
-    // Apply filters locally when data or filters change
+    // Update vehicles when filters change
     useEffect(() => {
-        if (!vehicles.length) return;
+        fetchVehicles();
+    }, [filters]);
 
-        let filtered = [...vehicles];
-
-        // Apply type filter
-        if (selectedGroup !== 'All vehicles') {
-            filtered = filtered.filter(v => v.type === selectedGroup);
-        }
-
-        // Apply brand filter
-        if (selectedBrand) {
-            filtered = filtered.filter(v => v.brand === selectedBrand);
-        }
-
-        // Apply category filter
-        if (selectedCategory) {
-            filtered = filtered.filter(v => v.category === selectedCategory);
-        }
-
-        // Apply price filter
-        filtered = filtered.filter(v => {
-            const price = v.dailyPrice || 0;
-            return price >= priceRange[0] && price <= priceRange[1];
-        });
-
-        // Apply search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(v =>
-                v.brand.toLowerCase().includes(query) ||
-                v.model.toLowerCase().includes(query) ||
-                v.type.toLowerCase().includes(query) ||
-                v.category.toLowerCase().includes(query)
-            )
-        }
-
-        // Only show available vehicles
-        filtered = filtered.filter(v => v.available !== false);
-
-        setFilteredVehicles(filtered);
-    }, [vehicles, selectedGroup, selectedBrand, selectedCategory, priceRange, searchQuery]);
-
-    // Handle filter changes with proper backend integration
-    const handleGroupChange = async (group) => {
-        setSelectedGroup(group);
-        setSelectedBrand(null);
-        setSelectedCategory(null);
-
-        try {
-            setLoading(true);
-            let response;
-
-            if (group === 'All vehicles') {
-                response = await axios.get(`${VEHICLES_API}`);
-            } else {
-                response = await axios.get(`${VEHICLES_API}/type/${group}`);
-            }
-
-            const mappedVehicles = response.data.map(mapVehicleData);
-            setVehicles(mappedVehicles);
-        } catch (err) {
-            console.error(`Error fetching ${group} vehicles:`, err);
-            setError('Failed to filter vehicles. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    // Handler functions
+    const handleTypeChange = (type) => {
+        setFilters(prev => ({
+            ...prev,
+            type: type === 'All vehicles' ? null : type,
+            page: 0 // Reset to first page
+        }));
     };
 
-    const handleBrandChange = async (brand) => {
-        setSelectedBrand(brand);
-        setSelectedCategory(null);
-
-        try {
-            setLoading(true);
-            let response;
-
-            if (!brand) {
-                response = await axios.get(`${VEHICLES_API}`);
-            } else {
-                response = await axios.get(`${VEHICLES_API}/brand/${brand}`);
-            }
-
-            const mappedVehicles = response.data.map(mapVehicleData);
-            setVehicles(mappedVehicles);
-        } catch (err) {
-            console.error(`Error fetching ${brand} vehicles:`, err);
-            setError('Failed to filter vehicles. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    const handleBrandChange = (brand) => {
+        setFilters(prev => ({
+            ...prev,
+            brand: brand,
+            page: 0
+        }));
     };
 
-    const handleCategoryChange = async (category) => {
-        setSelectedCategory(category);
-
-        try {
-            setLoading(true);
-            let response;
-
-            if (!category) {
-                response = await axios.get(`${VEHICLES_API}`);
-            } else {
-                response = await axios.get(`${VEHICLES_API}/category/${category}`);
-            }
-
-            const mappedVehicles = response.data.map(mapVehicleData);
-            setVehicles(mappedVehicles);
-        } catch (err) {
-            console.error(`Error fetching ${category} vehicles:`, err);
-            setError('Failed to filter vehicles. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    const handleCategoryChange = (category) => {
+        setFilters(prev => ({
+            ...prev,
+            category: category,
+            page: 0
+        }));
     };
 
-    const handleSearch = async (e) => {
+    const handlePriceChange = (min, max) => {
+        setFilters(prev => ({
+            ...prev,
+            minPrice: min,
+            maxPrice: max,
+            page: 0
+        }));
+    };
+
+    const handleSearch = (e) => {
         e.preventDefault();
-
-        try {
-            setLoading(true);
-            let response;
-
-            if (searchQuery.trim()) {
-                response = await axios.get(`${VEHICLES_API}/search?q=${encodeURIComponent(searchQuery)}`);
-            } else {
-                response = await axios.get(`${VEHICLES_API}`);
-            }
-
-            const mappedVehicles = response.data.map(mapVehicleData);
-            setVehicles(mappedVehicles);
-        } catch (err) {
-            console.error('Error searching vehicles:', err);
-            setError('Search failed. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+        setFilters(prev => ({
+            ...prev,
+            searchQuery: prev.searchQuery,
+            page: 0
+        }));
     };
 
-    const resetFilters = async () => {
-        setSelectedGroup('All vehicles');
-        setSelectedBrand(null);
-        setSelectedCategory(null);
-        setPriceRange([0, 100]);
-        setSearchQuery('');
-
-        try {
-            setLoading(true);
-            const response = await axios.get(`${VEHICLES_API}`);
-            const mappedVehicles = response.data.map(mapVehicleData);
-            setVehicles(mappedVehicles);
-        } catch (err) {
-            console.error('Error resetting filters:', err);
-            setError('Failed to reset filters. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+    const resetFilters = () => {
+        setFilters({
+            type: null,
+            brand: null,
+            category: null,
+            minPrice: null,
+            maxPrice: null,
+            searchQuery: '',
+            page: 0,
+            size: 12,
+            sortBy: 'brand',
+            sortDirection: 'ASC'
+        });
     };
 
+    // Loading state
     if (loading && !vehicles.length) {
         return (
             <>
@@ -339,8 +255,8 @@ const Vehicles = () => {
                                             type="text"
                                             className="form-control"
                                             placeholder="Search vehicles..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            value={filters.searchQuery}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
                                         />
                                         <button className="btn btn-primary" type="submit">
                                             Search
@@ -353,16 +269,16 @@ const Vehicles = () => {
                                     <h6 className="font-weight-bold mb-3">Vehicle Type</h6>
                                     <div className="d-flex flex-wrap gap-2">
                                         <button
-                                            className={`btn btn-sm ${selectedGroup === 'All vehicles' ? 'btn-primary' : 'btn-outline-primary'}`}
-                                            onClick={() => handleGroupChange('All vehicles')}
+                                            className={`btn btn-sm ${!filters.type ? 'btn-primary' : 'btn-outline-primary'}`}
+                                            onClick={() => handleTypeChange('All vehicles')}
                                         >
                                             All vehicles
                                         </button>
                                         {types.map(type => (
                                             <button
                                                 key={type}
-                                                className={`btn btn-sm ${selectedGroup === type ? 'btn-primary' : 'btn-outline-primary'}`}
-                                                onClick={() => handleGroupChange(type)}
+                                                className={`btn btn-sm ${filters.type === type ? 'btn-primary' : 'btn-outline-primary'}`}
+                                                onClick={() => handleTypeChange(type)}
                                             >
                                                 {type}
                                             </button>
@@ -375,20 +291,20 @@ const Vehicles = () => {
                                     <h6 className="font-weight-bold mb-3">Brand</h6>
                                     <div className="list-group">
                                         <button
-                                            className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!selectedBrand ? 'active' : ''}`}
+                                            className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!filters.brand ? 'active' : ''}`}
                                             onClick={() => handleBrandChange(null)}
                                         >
                                             All Brands
-                                            {!selectedBrand && <FiChevronRight />}
+                                            {!filters.brand && <FiChevronRight />}
                                         </button>
                                         {brands.map(brand => (
                                             <button
                                                 key={brand}
-                                                className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedBrand === brand ? 'active' : ''}`}
+                                                className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${filters.brand === brand ? 'active' : ''}`}
                                                 onClick={() => handleBrandChange(brand)}
                                             >
                                                 {brand}
-                                                {selectedBrand === brand && <FiChevronRight />}
+                                                {filters.brand === brand && <FiChevronRight />}
                                             </button>
                                         ))}
                                     </div>
@@ -399,20 +315,20 @@ const Vehicles = () => {
                                     <h6 className="font-weight-bold mb-3">Category</h6>
                                     <div className="list-group">
                                         <button
-                                            className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!selectedCategory ? 'active' : ''}`}
+                                            className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${!filters.category ? 'active' : ''}`}
                                             onClick={() => handleCategoryChange(null)}
                                         >
                                             All Categories
-                                            {!selectedCategory && <FiChevronRight />}
+                                            {!filters.category && <FiChevronRight />}
                                         </button>
                                         {categories.map(category => (
                                             <button
                                                 key={category}
-                                                className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selectedCategory === category ? 'active' : ''}`}
+                                                className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${filters.category === category ? 'active' : ''}`}
                                                 onClick={() => handleCategoryChange(category)}
                                             >
                                                 {category}
-                                                {selectedCategory === category && <FiChevronRight />}
+                                                {filters.category === category && <FiChevronRight />}
                                             </button>
                                         ))}
                                     </div>
@@ -423,8 +339,8 @@ const Vehicles = () => {
                                     <h6 className="font-weight-bold mb-3">Price Range</h6>
                                     <div className="px-2">
                                         <div className="d-flex justify-content-between mb-2">
-                                            <span className="badge bg-light text-dark">${priceRange[0]}</span>
-                                            <span className="badge bg-light text-dark">${priceRange[1]}</span>
+                                            <span className="badge bg-light text-dark">${filters.minPrice || 0}</span>
+                                            <span className="badge bg-light text-dark">${filters.maxPrice || 100}</span>
                                         </div>
                                         <input
                                             type="range"
@@ -432,8 +348,8 @@ const Vehicles = () => {
                                             min="0"
                                             max="100"
                                             step="5"
-                                            value={priceRange[1]}
-                                            onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                                            value={filters.maxPrice || 100}
+                                            onChange={(e) => handlePriceChange(filters.minPrice || 0, parseInt(e.target.value))}
                                         />
                                         <div className="d-flex justify-content-between mt-1">
                                             <small className="text-muted">Min</small>
@@ -458,11 +374,11 @@ const Vehicles = () => {
                         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
                             <div>
                                 <h2 className="mb-1">
-                                    {selectedBrand || 'All'} {selectedGroup !== 'All vehicles' ? selectedGroup : 'Vehicles'}
-                                    {selectedCategory && ` (${selectedCategory})`}
+                                    {filters.brand || 'All'} {filters.type || 'Vehicles'}
+                                    {filters.category && ` (${filters.category})`}
                                 </h2>
                                 <p className="text-muted mb-0">
-                                    Showing {filteredVehicles.length} {filteredVehicles.length === 1 ? 'vehicle' : 'vehicles'}
+                                    Showing {vehicles.length} {vehicles.length === 1 ? 'vehicle' : 'vehicles'}
                                 </p>
                             </div>
                             <div className="mt-2 mt-md-0">
@@ -472,8 +388,8 @@ const Vehicles = () => {
                                     </span>
                                     <select
                                         className="form-select"
-                                        value={priceRange[1]}
-                                        onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                                        value={filters.maxPrice || 100}
+                                        onChange={(e) => handlePriceChange(0, parseInt(e.target.value))}
                                     >
                                         <option value="30">Under $30</option>
                                         <option value="50">Under $50</option>
@@ -484,7 +400,7 @@ const Vehicles = () => {
                             </div>
                         </div>
 
-                        {filteredVehicles.length === 0 ? (
+                        {vehicles.length === 0 ? (
                             <div className="card shadow-sm">
                                 <div className="card-body text-center py-5">
                                     <h4 className="text-muted mb-3">No vehicles found</h4>
@@ -501,12 +417,12 @@ const Vehicles = () => {
                             </div>
                         ) : (
                             <div className="row g-4">
-                                {filteredVehicles.map((vehicle, index) => (
-                                    <div key={vehicle.id || `fallback-${index}`} className="col-lg-4 col-md-6">
+                                {vehicles.map((vehicle) => (
+                                    <div key={vehicle.id} className="col-lg-4 col-md-6">
                                         <div className="card h-100 shadow-sm border-0 overflow-hidden hover-scale">
                                             <div className="position-relative">
                                                 <img
-                                                    src={vehicle.imageUrl || car}
+                                                    src={vehicle.imageUrl}
                                                     alt={`${vehicle.brand} ${vehicle.model}`}
                                                     className="card-img-top img-fluid"
                                                     style={{ height: '200px', objectFit: 'cover' }}
@@ -517,7 +433,7 @@ const Vehicles = () => {
                                                 <div className="position-absolute bottom-0 start-0 m-2">
                                                     <span className="badge bg-white text-dark">
                                                         <FiStar className="text-warning me-1" />
-                                                        {vehicle.rating || 4.0}
+                                                        {vehicle.rating}
                                                     </span>
                                                 </div>
                                             </div>
@@ -559,7 +475,7 @@ const Vehicles = () => {
 
                                                 <div className="d-grid">
                                                     <Link
-                                                        to={`/viewdetails/${index+1}`}
+                                                        to={`/viewdetails/${vehicle.id}`}
                                                         className="btn btn-outline-primary"
                                                     >
                                                         View Details
