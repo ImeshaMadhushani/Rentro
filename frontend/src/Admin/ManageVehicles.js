@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-//import { Link, useNavigate } from 'react-router-dom';
-//import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
-//import { FiMenu, FiX, FiLogOut, FiHome, FiUsers, FiCalendar, FiPieChart } from 'react-icons/fi';
 import { FaCar } from 'react-icons/fa';
-//import logo from '../assests/logo.png';
+import axios from 'axios';
 
 const ManageVehicles = ({ isMobile }) => {
     const [vehicles, setVehicles] = useState([]);
@@ -13,6 +9,8 @@ const ManageVehicles = ({ isMobile }) => {
     const [currentVehicle, setCurrentVehicle] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(null);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -31,21 +29,25 @@ const ManageVehicles = ({ isMobile }) => {
         description: ''
     });
 
+    // Fetch vehicles from backend
+    const fetchVehicles = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/vehicles`, {
+                headers: {
+                    Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                }
+            });
+            setVehicles(res.data);
+            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching vehicles:', err);
+            setError('Failed to load vehicles. Please try again.');
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchVehicles = async () => {
-            try {
-                const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/vehicles`, {
-                    headers: {
-                        Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
-                    }
-                });
-                setVehicles(res.data);
-                setLoading(false);
-            } catch (err) {
-                console.error('Error fetching vehicles:', err);
-                setLoading(false);
-            }
-        };
         fetchVehicles();
     }, []);
 
@@ -77,21 +79,23 @@ const ManageVehicles = ({ isMobile }) => {
         setShowModal(true);
     };
 
-    const handleSubmit = async (e) => {
+   /*  const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             if (currentVehicle) {
                 // Update existing vehicle
-                await axios.put(
-                    `${process.env.REACT_APP_API_URL}/api/vehicles/${currentVehicle._id}`,
+                const res = await axios.put(
+                    `${process.env.REACT_APP_API_URL}/api/vehicles/${currentVehicle.id}`,
                     formData,
                     {
                         headers: {
-                            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`,
+                            'Content-Type': 'application/json'
                         }
                     }
                 );
-                setVehicles(vehicles.map(v => v._id === currentVehicle._id ? { ...v, ...formData } : v));
+                setVehicles(vehicles.map(v => v.id === currentVehicle.id ? res.data : v));
+                setSuccess('Vehicle updated successfully!');
             } else {
                 // Add new vehicle
                 const res = await axios.post(
@@ -99,16 +103,55 @@ const ManageVehicles = ({ isMobile }) => {
                     formData,
                     {
                         headers: {
-                            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`,
+                            'Content-Type': 'application/json'
                         }
                     }
                 );
                 setVehicles([...vehicles, res.data]);
+                setSuccess('Vehicle added successfully!');
             }
             setShowModal(false);
             setCurrentVehicle(null);
+            setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             console.error('Error saving vehicle:', err);
+            setError(err.response?.data?.message || 'Failed to save vehicle. Please try again.');
+            setTimeout(() => setError(null), 3000);
+        }
+    }; */
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const url = currentVehicle
+                ? `${process.env.REACT_APP_API_URL}/api/vehicles/${currentVehicle.id}`
+                : `${process.env.REACT_APP_API_URL}/api/vehicles`;
+
+            const method = currentVehicle ? 'put' : 'post';
+
+            const response = await axios[method](url, formData, {
+                headers: {
+                    Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (currentVehicle) {
+                setVehicles(vehicles.map(v => v.id === currentVehicle.id ? response.data : v));
+                setSuccess('Vehicle updated successfully!');
+            } else {
+                setVehicles([...vehicles, response.data]);
+                setSuccess('Vehicle added successfully!');
+            }
+
+            setShowModal(false);
+            setCurrentVehicle(null);
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            console.error('Error saving vehicle:', err);
+            setError(err.response?.data?.message || 'Failed to save vehicle. Please try again.');
+            setTimeout(() => setError(null), 3000);
         }
     };
 
@@ -119,10 +162,38 @@ const ManageVehicles = ({ isMobile }) => {
                     Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
                 }
             });
-            setVehicles(vehicles.filter(v => v._id !== id));
+            setVehicles(vehicles.filter(v => v.id !== id));
             setConfirmDelete(null);
+            setSuccess('Vehicle deleted successfully!');
+            setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             console.error('Error deleting vehicle:', err);
+            setError(err.response?.data?.message || 'Failed to delete vehicle. Please try again.');
+            setTimeout(() => setError(null), 3000);
+        }
+    };
+
+    const handleToggleAvailability = async (id, currentStatus) => {
+        try {
+            await axios.patch(
+                `${process.env.REACT_APP_API_URL}/api/vehicles/${id}/availability`,
+                null,
+                {
+                    params: { available: !currentStatus },
+                    headers: {
+                        Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                    }
+                }
+            );
+            setVehicles(vehicles.map(v =>
+                v.id === id ? { ...v, available: !currentStatus } : v
+            ));
+            setSuccess(`Vehicle marked as ${!currentStatus ? 'available' : 'unavailable'}!`);
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            console.error('Error updating availability:', err);
+            setError('Failed to update availability. Please try again.');
+            setTimeout(() => setError(null), 3000);
         }
     };
 
@@ -167,6 +238,20 @@ const ManageVehicles = ({ isMobile }) => {
                 <FaCar className="me-2" /> Manage Vehicles
             </h4>
 
+            {/* Success and Error Messages */}
+            {success && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    {success}
+                    <button type="button" className="btn-close" onClick={() => setSuccess(null)}></button>
+                </div>
+            )}
+            {error && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                    {error}
+                    <button type="button" className="btn-close" onClick={() => setError(null)}></button>
+                </div>
+            )}
+
             <div className="card shadow-sm">
                 <div className="card-body">
                     <div className={`d-flex ${isMobile ? 'flex-column' : 'justify-content-between align-items-center'} mb-4`}>
@@ -197,10 +282,17 @@ const ManageVehicles = ({ isMobile }) => {
                             <thead>
                                 <tr>
                                     <th>Image</th>
-                                    <th>Brand/Model</th>
+                                    <th>Brand</th>
+                                    <th>Modal</th>
+                                    <th>Category</th>
                                     <th>Type</th>
                                     <th>Transmission</th>
                                     <th>Price/Day</th>
+                                    <th>Fuel Type</th>
+                                    <th>Seating Capacity</th>
+                                    <th>AC</th>
+                                    <th>Rating</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -208,7 +300,7 @@ const ManageVehicles = ({ isMobile }) => {
                             <tbody>
                                 {filteredVehicles.length > 0 ? (
                                     filteredVehicles.map((vehicle) => (
-                                        <tr key={vehicle._id}>
+                                        <tr key={vehicle.id}>
                                             <td>
                                                 {vehicle.image ? (
                                                     <img
@@ -223,15 +315,22 @@ const ManageVehicles = ({ isMobile }) => {
                                                     </div>
                                                 )}
                                             </td>
-                                            <td>
-                                                <div><strong>{vehicle.brand}</strong></div>
-                                                <div>{vehicle.name}</div>
-                                            </td>
+                                            <td>{vehicle.brand}</td>
+                                            <td>{vehicle.name}</td>
+                                            <td>{vehicle.category}</td>
                                             <td>{vehicle.type}</td>
                                             <td>{vehicle.transmission}</td>
                                             <td>${vehicle.dailyPrice}</td>
+                                            <td>{vehicle.fuelType}</td>
+                                            <td>{vehicle.seatingCapacity}</td>
+                                            <td>{vehicle.hasAC ? 'Yes' : 'No'}</td>
+                                            <td>{vehicle.rating}</td>
+                                            <td>{vehicle.description || 'No description'}</td>
                                             <td>
-                                                <span className={`badge ${vehicle.available ? 'bg-success' : 'bg-danger'}`}>
+                                                <span
+                                                    className={`badge ${vehicle.available ? 'bg-success' : 'bg-danger'} cursor-pointer`}
+                                                    onClick={() => handleToggleAvailability(vehicle.id, vehicle.available)}
+                                                >
                                                     {vehicle.available ? 'Available' : 'Unavailable'}
                                                 </span>
                                             </td>
@@ -245,7 +344,7 @@ const ManageVehicles = ({ isMobile }) => {
                                                     </button>
                                                     <button
                                                         className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => setConfirmDelete(vehicle._id)}
+                                                        onClick={() => setConfirmDelete(vehicle.id)}
                                                     >
                                                         Delete
                                                     </button>
@@ -288,7 +387,7 @@ const ManageVehicles = ({ isMobile }) => {
                                 <form onSubmit={handleSubmit}>
                                     <div className="row g-3">
                                         <div className="col-md-6">
-                                            <label className="form-label">Brand</label>
+                                            <label className="form-label">Brand*</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
@@ -299,7 +398,7 @@ const ManageVehicles = ({ isMobile }) => {
                                             />
                                         </div>
                                         <div className="col-md-6">
-                                            <label className="form-label">Model Name</label>
+                                            <label className="form-label">Model Name*</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
@@ -310,7 +409,7 @@ const ManageVehicles = ({ isMobile }) => {
                                             />
                                         </div>
                                         <div className="col-md-6">
-                                            <label className="form-label">Category</label>
+                                            <label className="form-label">Category*</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
@@ -321,7 +420,7 @@ const ManageVehicles = ({ isMobile }) => {
                                             />
                                         </div>
                                         <div className="col-md-6">
-                                            <label className="form-label">Vehicle Type</label>
+                                            <label className="form-label">Vehicle Type*</label>
                                             <input
                                                 type="text"
                                                 className="form-control"
@@ -339,6 +438,7 @@ const ManageVehicles = ({ isMobile }) => {
                                                 name="image"
                                                 value={formData.image}
                                                 onChange={handleInputChange}
+                                                placeholder="https://example.com/image.jpg"
                                             />
                                         </div>
                                         <div className="col-md-4">
@@ -355,24 +455,26 @@ const ManageVehicles = ({ isMobile }) => {
                                             />
                                         </div>
                                         <div className="col-md-4">
-                                            <label className="form-label">Transmission</label>
+                                            <label className="form-label">Transmission*</label>
                                             <select
                                                 className="form-select"
                                                 name="transmission"
                                                 value={formData.transmission}
                                                 onChange={handleInputChange}
+                                                required
                                             >
                                                 <option value="Automatic">Automatic</option>
                                                 <option value="Manual">Manual</option>
                                             </select>
                                         </div>
                                         <div className="col-md-4">
-                                            <label className="form-label">Fuel Type</label>
+                                            <label className="form-label">Fuel Type*</label>
                                             <select
                                                 className="form-select"
                                                 name="fuelType"
                                                 value={formData.fuelType}
                                                 onChange={handleInputChange}
+                                                required
                                             >
                                                 <option value="Petrol">Petrol</option>
                                                 <option value="Diesel">Diesel</option>
@@ -381,7 +483,7 @@ const ManageVehicles = ({ isMobile }) => {
                                             </select>
                                         </div>
                                         <div className="col-md-4">
-                                            <label className="form-label">Seating Capacity</label>
+                                            <label className="form-label">Seating Capacity*</label>
                                             <input
                                                 type="number"
                                                 className="form-control"
@@ -390,10 +492,11 @@ const ManageVehicles = ({ isMobile }) => {
                                                 max="20"
                                                 value={formData.seatingCapacity}
                                                 onChange={handleInputChange}
+                                                required
                                             />
                                         </div>
                                         <div className="col-md-4">
-                                            <label className="form-label">Daily Price ($)</label>
+                                            <label className="form-label">Daily Price ($)*</label>
                                             <input
                                                 type="number"
                                                 className="form-control"
