@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from 'react-router-dom';
 
 const CarCard = ({ name, price,image }) => {
     return (
@@ -31,11 +32,13 @@ const CarCard = ({ name, price,image }) => {
                         <h4 className="fw-bold text-primary mb-0">${price}</h4>
                         <span className="text-muted ms-1 small">/ day</span>
                     </div>
-
+        
+                    <Link to="/viewdetails" className="text-decoration-none">
                     <button className="btn btn-primary w-100 d-flex align-items-center justify-content-center">
                         <i className="bi bi-eye-fill me-2"></i>
                         View Details
-                    </button>
+                        </button>
+                    </Link>
                 </div>
             </div>
         </div>
