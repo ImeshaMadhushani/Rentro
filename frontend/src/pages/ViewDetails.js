@@ -1,139 +1,105 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Button, Card, ListGroup, Badge } from 'react-bootstrap';
-import { ArrowLeft } from 'react-bootstrap-icons'; // Import ArrowLeft from react-bootstrap-icons
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import car from '../assests/car.png'; // Make sure this path points to your default car image
+import { FiStar } from 'react-icons/fi';
+
+// Define your API base URL here or import it from a config file
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+//const VEHICLES_API = `${API_BASE_URL}/api/vehicles`;
 
 const ViewDetails = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
+    const { id } = useParams();
+    console.log("🚗 Vehicle ID from URL:", id);
+    const [vehicle, setVehicle] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Default car data in case direct navigation occurs
-    const defaultCar = {
-        id: 1,
-        category: 'Luxury',
-        rating: 4.6,
-        name: 'Audi A4',
-        type: 'Sedan',
-        price: 76,
-        transmission: 'Manual',
-        fuel: 'Petrol',
-        ac: false,
-        seats: 5,
-        image: 'https://example.com/audi-a4.jpg',
-        description: 'The Audi A4 combines luxury and performance with its refined interior and powerful engine options.',
-        features: ['Leather seats', 'Premium sound system', 'Navigation', 'Bluetooth connectivity'],
-    };
+    useEffect(() => {
+        const fetchVehicleDetails = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(`${API_BASE_URL}/api/vehicles/${id}`);
+                setVehicle(response.data);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching vehicle details:', err);
+                setError('Failed to load vehicle details');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Get car data from location state or use default
-    const car = location.state?.car || defaultCar;
+        if (id) {
+            fetchVehicleDetails();
+        }
+    }, [id]);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return <div>{error}</div>;
+    }
+
+    if (!vehicle) {
+        return <div>Vehicle not found</div>;
+    }
 
     return (
-        <Container className="my-5">
-            <Button variant="light" onClick={() => navigate(-1)} className="mb-4">
-                <ArrowLeft className="me-2" /> Back to Results
-            </Button>
-
-            <Row>
-                <Col lg={6} className="mb-4">
-                    <Card>
-                        <Card.Img
-                            variant="top"
-                            src={car.image}
-                            alt={car.name}
-                            style={{ height: '300px', objectFit: 'cover' }}
+        <>
+            <Header />
+            <div className="container py-5">
+                <div className="row">
+                    <div className="col-md-6">
+                        <img
+                            src={vehicle.image || car}
+                            alt={`${vehicle.brand} ${vehicle.name}`}
+                            className="img-fluid rounded"
                         />
-                    </Card>
-                </Col>
+                    </div>
+                    <div className="col-md-6">
+                        <h1>{vehicle.brand} {vehicle.name}</h1>
+                        <p className="text-muted">{vehicle.type} • {vehicle.category}</p>
 
-                <Col lg={6}>
-                    <Card>
-                        <Card.Body>
-                            <div className="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <Badge bg="secondary" className="mb-2">{car.category}</Badge>
-                                    <Card.Title as="h2">{car.name} <small className="text-muted">{car.type}</small></Card.Title>
-                                    <div className="d-flex align-items-center mb-3">
-                                        <span className="text-warning me-2">★ {car.rating}</span>
-                                        <span className="text-muted">(120 reviews)</span>
-                                    </div>
-                                </div>
-                                <h3 className="text-primary">${car.price} <small className="text-muted">/ day</small></h3>
-                            </div>
+                        <div className="d-flex align-items-center mb-3">
+                            <span className="badge bg-primary me-2">
+                                <FiStar className="me-1" /> {vehicle.rating || 'N/A'}
+                            </span>
+                            <span className="text-success">
+                                {vehicle.available ? 'Available' : 'Not Available'}
+                            </span>
+                        </div>
 
-                            <ListGroup variant="flush" className="mb-4">
-                                <ListGroup.Item className="d-flex justify-content-between">
-                                    <span>Transmission</span>
-                                    <span>{car.transmission}</span>
-                                </ListGroup.Item>
-                                <ListGroup.Item className="d-flex justify-content-between">
-                                    <span>Fuel Type</span>
-                                    <span>{car.fuel}</span>
-                                </ListGroup.Item>
-                                <ListGroup.Item className="d-flex justify-content-between">
-                                    <span>Air Conditioning</span>
-                                    <span>{car.ac ? 'Yes' : 'No'}</span>
-                                </ListGroup.Item>
-                                <ListGroup.Item className="d-flex justify-content-between">
-                                    <span>Seats</span>
-                                    <span>{car.seats}</span>
-                                </ListGroup.Item>
-                            </ListGroup>
+                        <h3 className="text-primary">${vehicle.dailyPrice} <small className="text-muted">per day</small></h3>
 
-                            <Card.Text className="mb-4">
-                                {car.description}
-                            </Card.Text>
+                        <div className="mb-4">
+                            <h4>Specifications</h4>
+                            <ul className="list-group list-group-flush">
+                                <li className="list-group-item">
+                                    <strong>Transmission:</strong> {vehicle.transmission}
+                                </li>
+                                <li className="list-group-item">
+                                    <strong>Fuel Type:</strong> {vehicle.fuelType}
+                                </li>
+                                <li className="list-group-item">
+                                    <strong>Seating Capacity:</strong> {vehicle.seatingCapacity}
+                                </li>
+                                <li className="list-group-item">
+                                    <strong>Air Conditioning:</strong> {vehicle.hasAC ? 'Yes' : 'No'}
+                                </li>
+                            </ul>
+                        </div>
 
-                            <h5 className="mb-3">Features</h5>
-                            <div className="d-flex flex-wrap gap-2 mb-4">
-                                {car.features.map((feature, index) => (
-                                    <Badge key={index} bg="light" text="dark" className="px-3 py-2">
-                                        {feature}
-                                    </Badge>
-                                ))}
-                            </div>
-
-                            <Button variant="primary" size="lg" className="w-100 py-3">
-                                Rent Now
-                            </Button>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Additional sections can be added here */}
-            <Row className="mt-5">
-                <Col>
-                    <h4 className="mb-4">Similar Vehicles</h4>
-                    <Row>
-                        <Col md={6} lg={3}>
-                            <Card className="h-100">
-                                <Card.Img variant="top" src="https://example.com/bmw-3-series.jpg" />
-                                <Card.Body>
-                                    <Card.Title>BMW 3 Series</Card.Title>
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <span className="text-warning">★ 4.7</span>
-                                        <span className="text-primary">$82/day</span>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                        <Col md={6} lg={3}>
-                            <Card className="h-100">
-                                <Card.Img variant="top" src="https://example.com/mercedes-c-class.jpg" />
-                                <Card.Body>
-                                    <Card.Title>Mercedes C-Class</Card.Title>
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <span className="text-warning">★ 4.8</span>
-                                        <span className="text-primary">$88/day</span>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                        {/* Add more similar vehicles */}
-                    </Row>
-                </Col>
-            </Row>
-        </Container>
+                        <button className="btn btn-primary btn-lg">Rent Now</button>
+                    </div>
+                </div>
+            </div>
+            <Footer />
+        </>
     );
 };
 

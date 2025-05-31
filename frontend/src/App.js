@@ -4,7 +4,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
-
+import Vehicles from "./pages/Vehicles";
+import ViewDetails from "./pages/ViewDetails";
 
 function App() {
   return (
@@ -13,6 +14,9 @@ function App() {
         <Route path="/" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/vehicles" element={<Vehicles />} />
+        <Route path="/viewdetails/:id" element={<ViewDetails />} />
+        {/* Add more routes as needed */}
       </Routes>
     </Router>
   );
