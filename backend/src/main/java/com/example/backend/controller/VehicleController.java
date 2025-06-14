@@ -25,6 +25,7 @@ public class VehicleController {
         try {
             // Get all available vehicles from the vehicle service
             List<VehicleDTO> vehicles = vehicleService.getAllAvailableVehicles();
+            System.out.println("Returning vehicles: " + vehicles);
             return ResponseEntity.ok(vehicles);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

@@ -38,6 +38,7 @@ const ManageVehicles = ({ isMobile }) => {
                     Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
                 }
             });
+
             setVehicles(res.data);
             setLoading(false);
         } catch (err) {
@@ -79,13 +80,15 @@ const ManageVehicles = ({ isMobile }) => {
         setShowModal(true);
     };
 
-   /*  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            let response;
+
             if (currentVehicle) {
-                // Update existing vehicle
-                const res = await axios.put(
-                    `${process.env.REACT_APP_API_URL}/api/vehicles/${currentVehicle.id}`,
+                // Update existing vehicle using index+1 as ID
+                response = await axios.put(
+                    `${process.env.REACT_APP_API_URL}/api/vehicles/${vehicles.indexOf(currentVehicle) + 1}`,
                     formData,
                     {
                         headers: {
@@ -94,11 +97,15 @@ const ManageVehicles = ({ isMobile }) => {
                         }
                     }
                 );
-                setVehicles(vehicles.map(v => v.id === currentVehicle.id ? res.data : v));
+
+                // Update the vehicle in state
+                setVehicles(vehicles.map(v =>
+                    vehicles.indexOf(v) === vehicles.indexOf(currentVehicle) ? response.data : v
+                ));
                 setSuccess('Vehicle updated successfully!');
             } else {
                 // Add new vehicle
-                const res = await axios.post(
+                response = await axios.post(
                     `${process.env.REACT_APP_API_URL}/api/vehicles`,
                     formData,
                     {
@@ -108,39 +115,6 @@ const ManageVehicles = ({ isMobile }) => {
                         }
                     }
                 );
-                setVehicles([...vehicles, res.data]);
-                setSuccess('Vehicle added successfully!');
-            }
-            setShowModal(false);
-            setCurrentVehicle(null);
-            setTimeout(() => setSuccess(null), 3000);
-        } catch (err) {
-            console.error('Error saving vehicle:', err);
-            setError(err.response?.data?.message || 'Failed to save vehicle. Please try again.');
-            setTimeout(() => setError(null), 3000);
-        }
-    }; */
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const url = currentVehicle
-                ? `${process.env.REACT_APP_API_URL}/api/vehicles/${currentVehicle.id}`
-                : `${process.env.REACT_APP_API_URL}/api/vehicles`;
-
-            const method = currentVehicle ? 'put' : 'post';
-
-            const response = await axios[method](url, formData, {
-                headers: {
-                    Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (currentVehicle) {
-                setVehicles(vehicles.map(v => v.id === currentVehicle.id ? response.data : v));
-                setSuccess('Vehicle updated successfully!');
-            } else {
                 setVehicles([...vehicles, response.data]);
                 setSuccess('Vehicle added successfully!');
             }
@@ -155,14 +129,16 @@ const ManageVehicles = ({ isMobile }) => {
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (index) => {
         try {
-            await axios.delete(`${process.env.REACT_APP_API_URL}/api/vehicles/${id}`, {
+            // Use index+1 as the ID for deletion
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/vehicles/${index + 1}`, {
                 headers: {
                     Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
                 }
             });
-            setVehicles(vehicles.filter(v => v.id !== id));
+            // Remove the vehicle from state
+            setVehicles(vehicles.filter((v, i) => i !== index));
             setConfirmDelete(null);
             setSuccess('Vehicle deleted successfully!');
             setTimeout(() => setSuccess(null), 3000);
@@ -173,10 +149,11 @@ const ManageVehicles = ({ isMobile }) => {
         }
     };
 
-    const handleToggleAvailability = async (id, currentStatus) => {
+    const handleToggleAvailability = async (index, currentStatus) => {
         try {
+            // Use index+1 as the ID for updating availability
             await axios.patch(
-                `${process.env.REACT_APP_API_URL}/api/vehicles/${id}/availability`,
+                `${process.env.REACT_APP_API_URL}/api/vehicles/${index + 1}/availability`,
                 null,
                 {
                     params: { available: !currentStatus },
@@ -185,8 +162,9 @@ const ManageVehicles = ({ isMobile }) => {
                     }
                 }
             );
-            setVehicles(vehicles.map(v =>
-                v.id === id ? { ...v, available: !currentStatus } : v
+            // Update the vehicle's availability in state
+            setVehicles(vehicles.map((v, i) =>
+                i === index ? { ...v, available: !currentStatus } : v
             ));
             setSuccess(`Vehicle marked as ${!currentStatus ? 'available' : 'unavailable'}!`);
             setTimeout(() => setSuccess(null), 3000);
@@ -281,9 +259,10 @@ const ManageVehicles = ({ isMobile }) => {
                         <table className="table table-hover">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Image</th>
                                     <th>Brand</th>
-                                    <th>Modal</th>
+                                    <th>Model</th>
                                     <th>Category</th>
                                     <th>Type</th>
                                     <th>Transmission</th>
@@ -299,8 +278,9 @@ const ManageVehicles = ({ isMobile }) => {
                             </thead>
                             <tbody>
                                 {filteredVehicles.length > 0 ? (
-                                    filteredVehicles.map((vehicle) => (
-                                        <tr key={vehicle.id}>
+                                    filteredVehicles.map((vehicle, index) => (
+                                        <tr key={index}>
+                                            <td>{index + 1}</td>
                                             <td>
                                                 {vehicle.image ? (
                                                     <img
@@ -329,7 +309,7 @@ const ManageVehicles = ({ isMobile }) => {
                                             <td>
                                                 <span
                                                     className={`badge ${vehicle.available ? 'bg-success' : 'bg-danger'} cursor-pointer`}
-                                                    onClick={() => handleToggleAvailability(vehicle.id, vehicle.available)}
+                                                    onClick={() => handleToggleAvailability(index, vehicle.available)}
                                                 >
                                                     {vehicle.available ? 'Available' : 'Unavailable'}
                                                 </span>
@@ -344,7 +324,7 @@ const ManageVehicles = ({ isMobile }) => {
                                                     </button>
                                                     <button
                                                         className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => setConfirmDelete(vehicle.id)}
+                                                        onClick={() => setConfirmDelete(index)}
                                                     >
                                                         Delete
                                                     </button>
@@ -354,7 +334,7 @@ const ManageVehicles = ({ isMobile }) => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="7" className="text-center py-4">
+                                        <td colSpan="15" className="text-center py-4">
                                             No vehicles found
                                         </td>
                                     </tr>
@@ -564,7 +544,7 @@ const ManageVehicles = ({ isMobile }) => {
             )}
 
             {/* Delete Confirmation Modal */}
-            {confirmDelete && (
+            {confirmDelete !== null && (
                 <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog">
                         <div className="modal-content">

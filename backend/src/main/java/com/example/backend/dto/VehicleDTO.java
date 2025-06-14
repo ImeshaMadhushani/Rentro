@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VehicleDTO {
+    private Long id;
     private String brand;
     private String name;
     private String category;
@@ -21,4 +22,12 @@ public class VehicleDTO {
     private Double dailyPrice;
     private Boolean available;
     private String description;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 }
