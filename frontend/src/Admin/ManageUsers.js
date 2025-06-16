@@ -140,11 +140,11 @@ const ManageUsers = ({ isMobile }) => {
     };
 
     const filteredUsers = users.filter(user =>
-        user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
+        user &&
+        (user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+    ));
     const resetForm = () => {
         setFormData({
             fullName: '',
