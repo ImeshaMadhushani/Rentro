@@ -6,6 +6,7 @@ import { FiMenu, FiX, FiLogOut, FiHome,FiUsers, FiCalendar, FiPieChart } from 'r
 import { FaCar } from 'react-icons/fa';
 import logo from '../assests/logo.png';
 import ManageVehicles from './ManageVehicles';
+import ManageUsers from './ManageUsers';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -333,10 +334,12 @@ const AdminDashboard = () => {
         </div>
     </>
 ); */
+<>
+<ManageVehicles />
+<ManageUsers />
+</>
 
-<ManageVehicles/>
-
-const ManageUsers = ({ isMobile }) => (
+/* const ManageUsers = ({ isMobile }) => (
     <>
         <h4 className="mb-3 mb-md-4 d-flex align-items-center">
             <FiUsers className="me-2" /> Manage Users
@@ -370,7 +373,7 @@ const ManageUsers = ({ isMobile }) => (
             </div>
         </div>
     </>
-);
+); */
 
 const ManageRentals = ({ isMobile }) => (
     <>

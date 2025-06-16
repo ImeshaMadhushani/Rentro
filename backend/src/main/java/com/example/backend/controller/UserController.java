@@ -11,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -54,5 +56,67 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body("Invalid email or password");
+    }
+
+      // Get all users
+    @GetMapping
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        List<UserDTO> userDTOs = users.stream()
+                .map(user -> new UserDTO(
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getPhone(),
+                        null, // Don't return password
+                        user.getRole()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(userDTOs);
+    }
+
+    // Get user by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        Optional<User> userOptional = userService.getUserById(id);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            UserDTO userDTO = new UserDTO(
+                    user.getFullName(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    null, // Don't return password
+                    user.getRole());
+            return ResponseEntity.ok(userDTO);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // Update user
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+        try {
+            String result = userService.updateUser(id, userDTO);
+            if (result.equals("User not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating user: " + e.getMessage());
+        }
+    }
+
+    // Delete user
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        try {
+            boolean deleted = userService.deleteUser(id);
+            if (deleted) {
+                return ResponseEntity.ok("User deleted successfully");
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting user: " + e.getMessage());
+        }
     }
 }
