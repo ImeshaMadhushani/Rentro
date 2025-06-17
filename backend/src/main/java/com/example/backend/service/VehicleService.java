@@ -100,6 +100,7 @@ public class VehicleService {
 
     public VehicleDTO addVehicle(VehicleDTO vehicleDTO) {
         Vehicle vehicle = convertToEntity(vehicleDTO);
+        vehicle.setImage(vehicleDTO.getImage());
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
         return convertToDTO(savedVehicle);
     }

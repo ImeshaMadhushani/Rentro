@@ -11,6 +11,8 @@ const ManageVehicles = ({ isMobile }) => {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -59,6 +61,47 @@ const ManageVehicles = ({ isMobile }) => {
         });
     };
 
+    const handleImageChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Preview the image
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload the image
+        try {
+            setUploadingImage(true);
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const token = JSON.parse(localStorage.getItem('user'))?.token;
+            const res = await axios.post(
+                `${process.env.REACT_APP_API_URL}/api/upload`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            setFormData(prev => ({
+                ...prev,
+                image: res.data.imageUrl
+            }));
+            setUploadingImage(false);
+        } catch (err) {
+            console.error('Error uploading image:', err);
+            setError('Failed to upload image. Please try again.');
+            setUploadingImage(false);
+        }
+    };
+
     const handleEdit = (vehicle) => {
         setCurrentVehicle(vehicle);
         setFormData({
@@ -76,6 +119,7 @@ const ManageVehicles = ({ isMobile }) => {
             available: vehicle.available,
             description: vehicle.description
         });
+        setImagePreview(vehicle.image || null);
         setShowModal(true);
     };
 
@@ -121,6 +165,7 @@ const ManageVehicles = ({ isMobile }) => {
 
             setShowModal(false);
             setCurrentVehicle(null);
+            setImagePreview(null);
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             console.error('Error saving vehicle:', err);
@@ -196,6 +241,7 @@ const ManageVehicles = ({ isMobile }) => {
             available: true,
             description: ''
         });
+        setImagePreview(null);
         setCurrentVehicle(null);
     };
 
@@ -357,6 +403,7 @@ const ManageVehicles = ({ isMobile }) => {
                                     onClick={() => {
                                         setShowModal(false);
                                         setCurrentVehicle(null);
+                                        setImagePreview(null);
                                     }}
                                 ></button>
                             </div>
@@ -408,15 +455,40 @@ const ManageVehicles = ({ isMobile }) => {
                                             />
                                         </div>
                                         <div className="col-12">
-                                            <label className="form-label">Image URL</label>
+                                            <label className="form-label">Vehicle Image</label>
+                                            <div className="mb-3">
+                                                {imagePreview ? (
+                                                    <img
+                                                        src={imagePreview}
+                                                        alt="Preview"
+                                                        style={{
+                                                            maxWidth: '100%',
+                                                            maxHeight: '200px',
+                                                            marginBottom: '10px'
+                                                        }}
+                                                    />
+                                                ) : formData.image ? (
+                                                    <img
+                                                        src={formData.image}
+                                                        alt="Current"
+                                                        style={{
+                                                            maxWidth: '100%',
+                                                            maxHeight: '200px',
+                                                            marginBottom: '10px'
+                                                        }}
+                                                    />
+                                                ) : null}
+                                            </div>
                                             <input
-                                                type="text"
+                                                type="file"
                                                 className="form-control"
-                                                name="image"
-                                                value={formData.image}
-                                                onChange={handleInputChange}
-                                                placeholder="https://example.com/image.jpg"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
+                                                disabled={uploadingImage}
                                             />
+                                            {uploadingImage && (
+                                                <div className="mt-2 text-muted">Uploading image...</div>
+                                            )}
                                         </div>
                                         <div className="col-md-4">
                                             <label className="form-label">Rating</label>
@@ -525,12 +597,18 @@ const ManageVehicles = ({ isMobile }) => {
                                             onClick={() => {
                                                 setShowModal(false);
                                                 setCurrentVehicle(null);
+                                                setImagePreview(null);
                                             }}
                                         >
                                             Cancel
                                         </button>
-                                        <button type="submit" className="btn btn-primary">
-                                            {currentVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+                                        <button
+                                            type="submit"
+                                            className="btn btn-primary"
+                                            disabled={uploadingImage}
+                                        >
+                                            {uploadingImage ? 'Uploading...' :
+                                                (currentVehicle ? 'Update Vehicle' : 'Add Vehicle')}
                                         </button>
                                     </div>
                                 </form>
