@@ -64,6 +64,7 @@ public class UserController {
         List<User> users = userService.getAllUsers();
         List<UserDTO> userDTOs = users.stream()
                 .map(user -> new UserDTO(
+                        user.getId(),
                         user.getFullName(),
                         user.getEmail(),
                         user.getPhone(),
@@ -80,6 +81,7 @@ public class UserController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             UserDTO userDTO = new UserDTO(
+                    user.getId(),
                     user.getFullName(),
                     user.getEmail(),
                     user.getPhone(),

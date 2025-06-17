@@ -18,7 +18,7 @@ const ManageUsers = ({ isMobile }) => {
         email: '',
         phone: '',
         password: '',
-        role: 'USER'
+        role: 'CLIENT'
     });
 
     // Fetch users from backend
@@ -79,7 +79,7 @@ const ManageUsers = ({ isMobile }) => {
             if (currentUser) {
                 // Update existing user
                 response = await axios.put(
-                    `${process.env.REACT_APP_API_URL}/api/users/${users.indexOf(currentUser) + 1}`,
+                    `${process.env.REACT_APP_API_URL}/api/users/${currentUser.id}`,
                     formData,
                     {
                         headers: {
@@ -90,8 +90,8 @@ const ManageUsers = ({ isMobile }) => {
                 );
 
                 // Update the user in state
-                setUsers(users.map((u, index) =>
-                    index === users.indexOf(currentUser) ? response.data : u
+                setUsers(users.map(u =>
+                    u._id === currentUser._id ? response.data : u
                 ));
                 setSuccess('User updated successfully!');
             } else {
@@ -119,16 +119,16 @@ const ManageUsers = ({ isMobile }) => {
         }
     };
 
-    const handleDelete = async (index) => {
+    const handleDelete = async (userId) => {
         try {
             const token = JSON.parse(localStorage.getItem('user')).token;
-            await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/${index + 1}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
             // Remove the user from state
-            setUsers(users.filter((u, i) => i !== index));
+            setUsers(users.filter(u => u.id !== userId));
             setConfirmDelete(null);
             setSuccess('User deleted successfully!');
             setTimeout(() => setSuccess(null), 3000);
@@ -144,7 +144,8 @@ const ManageUsers = ({ isMobile }) => {
         (user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.role?.toLowerCase().includes(searchTerm.toLowerCase())
-    ));
+        ));
+
     const resetForm = () => {
         setFormData({
             fullName: '',
@@ -216,7 +217,7 @@ const ManageUsers = ({ isMobile }) => {
                         <table className="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Id</th>
                                     <th>Full Name</th>
                                     <th>Email</th>
                                     <th>Phone</th>
@@ -226,9 +227,9 @@ const ManageUsers = ({ isMobile }) => {
                             </thead>
                             <tbody>
                                 {filteredUsers.length > 0 ? (
-                                    filteredUsers.map((user, index) => (
-                                        <tr key={index}>
-                                            <td>{index + 1}</td>
+                                    filteredUsers.map((user) => (
+                                        <tr key={user.id}>
+                                            <td>{user.id}</td>
                                             <td>{user.fullName}</td>
                                             <td>{user.email}</td>
                                             <td>{user.phone || '-'}</td>
@@ -247,7 +248,7 @@ const ManageUsers = ({ isMobile }) => {
                                                     </button>
                                                     <button
                                                         className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => setConfirmDelete(index)}
+                                                        onClick={() => setConfirmDelete(user.id)}
                                                     >
                                                         <FaTrashAlt />
                                                     </button>
@@ -257,7 +258,7 @@ const ManageUsers = ({ isMobile }) => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" className="text-center py-4">
+                                        <td colSpan="5" className="text-center py-4">
                                             No users found
                                         </td>
                                     </tr>
@@ -347,7 +348,7 @@ const ManageUsers = ({ isMobile }) => {
                                             onChange={handleInputChange}
                                             required
                                         >
-                                            <option value="CLIENT">CLIENT</option>
+                                            <option value="CLIENT">Client</option>
                                             <option value="ADMIN">Admin</option>
                                         </select>
                                     </div>
