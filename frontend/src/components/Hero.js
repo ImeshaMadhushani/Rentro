@@ -134,7 +134,7 @@ const Hero = () => {
           {/* form */}
           <div className="col-12 col-lg-5 offset-lg-1">
             <div className="booking-card p-4 p-md-5 shadow-lg rounded-4 bg-white">
-              <h4 className="text-primary fw-bold text-center mb-4">Book Your Car</h4>
+              <h4 className="text-primary fw-bold text-center mb-4">Rent a Car</h4>
               <form onSubmit={handleSubmit} className="needs-validation" noValidate>
                 {/* Car type */}
                 <div className="mb-3">
@@ -219,9 +219,9 @@ const Hero = () => {
                   </div>
                 </div>
 
-                <button className="btn btn-warning w-100 fw-bold py-2 rounded-pill">
-                  Book Now
-                </button>
+                 <Link to="/vehicles" className="btn btn-warning w-100 fw-bold py-2 rounded-pill">
+                  Rent Now
+                </Link>
               </form>
             </div>
           </div>

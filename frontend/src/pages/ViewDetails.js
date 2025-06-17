@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -94,7 +94,9 @@ const ViewDetails = () => {
                             </ul>
                         </div>
 
-                        <button className="btn btn-primary btn-lg">Rent Now</button>
+                        <Link to="/rent" className="btn btn-primary btn-lg">
+                            Rent Now
+                        </Link>
                     </div>
                 </div>
             </div>

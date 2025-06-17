@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Vehicles from "./pages/Vehicles";
 import ViewDetails from "./pages/ViewDetails";
 import AdminDashboard from "./Admin/AdminDashboard";
+import RentCar from "./pages/RentCar";
 
 // Route protection components
 const ProtectedRoute = ({ children, roles = [] }) => {
@@ -52,11 +53,12 @@ function App() {
           </ProtectedRoute>
         } /> */}
         
-
+        <Route path="/rent" element={<RentCar />} />
         {/* Protected routes */}
         {/* <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} /> */}
         <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
         <Route path="/viewdetails/:id" element={<ProtectedRoute><ViewDetails /></ProtectedRoute>} />
+        
         {/* Add more routes as needed */}
 
        
