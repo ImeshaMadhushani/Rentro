@@ -134,6 +134,7 @@ public class VehicleService {
     // Helper methods
     private VehicleDTO convertToDTO(Vehicle vehicle) {
         VehicleDTO dto = new VehicleDTO();
+        dto.setId(vehicle.getId());
         dto.setBrand(vehicle.getBrand());
         dto.setName(vehicle.getName());
         dto.setCategory(vehicle.getCategory());
@@ -152,6 +153,7 @@ public class VehicleService {
 
     private Vehicle convertToEntity(VehicleDTO dto) {
         Vehicle vehicle = new Vehicle();
+        vehicle.setId(vehicle.getId());
         vehicle.setBrand(dto.getBrand());
         vehicle.setName(dto.getName());
         vehicle.setCategory(dto.getCategory());
@@ -169,6 +171,8 @@ public class VehicleService {
     }
 
     private void updateVehicleFromDTO(Vehicle vehicle, VehicleDTO dto) {
+        if (dto.getId() != null)
+            vehicle.setId(dto.getId());
         if (dto.getBrand() != null)
             vehicle.setBrand(dto.getBrand());
         if (dto.getName() != null)

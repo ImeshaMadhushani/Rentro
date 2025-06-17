@@ -35,10 +35,9 @@ const ManageVehicles = ({ isMobile }) => {
             setLoading(true);
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/vehicles`, {
                 headers: {
-                    Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                    Authorization: `Bearer ${JSON.parse(localStorage.getItem('user'))?.token}`
                 }
             });
-
             setVehicles(res.data);
             setLoading(false);
         } catch (err) {
@@ -83,16 +82,17 @@ const ManageVehicles = ({ isMobile }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const token = JSON.parse(localStorage.getItem('user'))?.token;
             let response;
 
             if (currentVehicle) {
-                // Update existing vehicle using index+1 as ID
+                // Update existing vehicle
                 response = await axios.put(
-                    `${process.env.REACT_APP_API_URL}/api/vehicles/${vehicles.indexOf(currentVehicle) + 1}`,
+                    `${process.env.REACT_APP_API_URL}/api/vehicles/${currentVehicle.id}`,
                     formData,
                     {
                         headers: {
-                            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`,
+                            Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         }
                     }
@@ -100,7 +100,7 @@ const ManageVehicles = ({ isMobile }) => {
 
                 // Update the vehicle in state
                 setVehicles(vehicles.map(v =>
-                    vehicles.indexOf(v) === vehicles.indexOf(currentVehicle) ? response.data : v
+                    v.id === currentVehicle.id ? response.data : v
                 ));
                 setSuccess('Vehicle updated successfully!');
             } else {
@@ -110,7 +110,7 @@ const ManageVehicles = ({ isMobile }) => {
                     formData,
                     {
                         headers: {
-                            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`,
+                            Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         }
                     }
@@ -129,16 +129,16 @@ const ManageVehicles = ({ isMobile }) => {
         }
     };
 
-    const handleDelete = async (index) => {
+    const handleDelete = async (vehicleId) => {
         try {
-            // Use index+1 as the ID for deletion
-            await axios.delete(`${process.env.REACT_APP_API_URL}/api/vehicles/${index + 1}`, {
+            const token = JSON.parse(localStorage.getItem('user'))?.token;
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/vehicles/${vehicleId}`, {
                 headers: {
-                    Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                    Authorization: `Bearer ${token}`
                 }
             });
             // Remove the vehicle from state
-            setVehicles(vehicles.filter((v, i) => i !== index));
+            setVehicles(vehicles.filter(v => v.id !== vehicleId));
             setConfirmDelete(null);
             setSuccess('Vehicle deleted successfully!');
             setTimeout(() => setSuccess(null), 3000);
@@ -149,22 +149,21 @@ const ManageVehicles = ({ isMobile }) => {
         }
     };
 
-    const handleToggleAvailability = async (index, currentStatus) => {
+    const handleToggleAvailability = async (vehicleId, currentStatus) => {
         try {
-            // Use index+1 as the ID for updating availability
+            const token = JSON.parse(localStorage.getItem('user'))?.token;
             await axios.patch(
-                `${process.env.REACT_APP_API_URL}/api/vehicles/${index + 1}/availability`,
-                null,
+                `${process.env.REACT_APP_API_URL}/api/vehicles/${vehicleId}/availability`,
+                { available: !currentStatus },
                 {
-                    params: { available: !currentStatus },
                     headers: {
-                        Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
+                        Authorization: `Bearer ${token}`
                     }
                 }
             );
             // Update the vehicle's availability in state
-            setVehicles(vehicles.map((v, i) =>
-                i === index ? { ...v, available: !currentStatus } : v
+            setVehicles(vehicles.map(v =>
+                v.id === vehicleId ? { ...v, available: !currentStatus } : v
             ));
             setSuccess(`Vehicle marked as ${!currentStatus ? 'available' : 'unavailable'}!`);
             setTimeout(() => setSuccess(null), 3000);
@@ -176,9 +175,9 @@ const ManageVehicles = ({ isMobile }) => {
     };
 
     const filteredVehicles = vehicles.filter(vehicle =>
-        vehicle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.type.toLowerCase().includes(searchTerm.toLowerCase())
+        vehicle.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.type?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const resetForm = () => {
@@ -271,16 +270,15 @@ const ManageVehicles = ({ isMobile }) => {
                                     <th>Seating Capacity</th>
                                     <th>AC</th>
                                     <th>Rating</th>
-                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredVehicles.length > 0 ? (
-                                    filteredVehicles.map((vehicle, index) => (
-                                        <tr key={index}>
-                                            <td>{index + 1}</td>
+                                    filteredVehicles.map((vehicle) => (
+                                        <tr key={vehicle.id}>
+                                            <td>{vehicle.id}</td>
                                             <td>
                                                 {vehicle.image ? (
                                                     <img
@@ -305,11 +303,10 @@ const ManageVehicles = ({ isMobile }) => {
                                             <td>{vehicle.seatingCapacity}</td>
                                             <td>{vehicle.hasAC ? 'Yes' : 'No'}</td>
                                             <td>{vehicle.rating}</td>
-                                            <td>{vehicle.description || 'No description'}</td>
                                             <td>
                                                 <span
                                                     className={`badge ${vehicle.available ? 'bg-success' : 'bg-danger'} cursor-pointer`}
-                                                    onClick={() => handleToggleAvailability(index, vehicle.available)}
+                                                    onClick={() => handleToggleAvailability(vehicle.id, vehicle.available)}
                                                 >
                                                     {vehicle.available ? 'Available' : 'Unavailable'}
                                                 </span>
@@ -324,7 +321,7 @@ const ManageVehicles = ({ isMobile }) => {
                                                     </button>
                                                     <button
                                                         className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => setConfirmDelete(index)}
+                                                        onClick={() => setConfirmDelete(vehicle.id)}
                                                     >
                                                         Delete
                                                     </button>
@@ -334,7 +331,7 @@ const ManageVehicles = ({ isMobile }) => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="15" className="text-center py-4">
+                                        <td colSpan="14" className="text-center py-4">
                                             No vehicles found
                                         </td>
                                     </tr>
