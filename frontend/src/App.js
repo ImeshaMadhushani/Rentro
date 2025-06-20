@@ -8,6 +8,8 @@ import Vehicles from "./pages/Vehicles";
 import ViewDetails from "./pages/ViewDetails";
 import AdminDashboard from "./Admin/AdminDashboard";
 import RentCar from "./pages/RentCar";
+import Profile from "./pages/Profile";
+import RentalDetails from "./pages/RentalDetails";
 
 // Route protection components
 const ProtectedRoute = ({ children, roles = [] }) => {
@@ -63,8 +65,11 @@ function App() {
             <RentCar />
           </ProtectedRoute>
         } />
-        
-        {/* Add more routes as needed */}
+
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/rentals/:id" element={<ProtectedRoute><RentalDetails /></ProtectedRoute>} />
+
+       \
 
        
     
