@@ -94,7 +94,8 @@ const ViewDetails = () => {
                             </ul>
                         </div>
 
-                        <Link to="/rent" className="btn btn-primary btn-lg">
+                        <Link to={`/rent/${vehicle.id}`}
+                            state={{ vehicle }} className="btn btn-primary btn-lg">
                             Rent Now
                         </Link>
                     </div>

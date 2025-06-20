@@ -53,11 +53,16 @@ function App() {
           </ProtectedRoute>
         } /> */}
         
-        <Route path="/rent" element={<RentCar />} />
-        {/* Protected routes */}
+{/*         <Route path="/rent/:id" element={<RentCar />} />
+ */}        {/* Protected routes */}
         {/* <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} /> */}
         <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
         <Route path="/viewdetails/:id" element={<ProtectedRoute><ViewDetails /></ProtectedRoute>} />
+        <Route path="/rent/:id" element={
+          <ProtectedRoute roles={["CLIENT"]}>
+            <RentCar />
+          </ProtectedRoute>
+        } />
         
         {/* Add more routes as needed */}
 
