@@ -62,6 +62,7 @@ const RentCar = () => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const [loadingVehicle, setLoadingVehicle] = useState(true);
+    const [paymentReference, setPaymentReference] = useState('');
 
     // Calculate distance between two coordinates (Haversine formula)
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -165,6 +166,7 @@ const RentCar = () => {
 
             // Generate a mock payment reference
             const paymentReference = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            setPaymentReference(paymentReference);
 
             // First create the rental
             const rentalResponse = await axios.post(
@@ -249,7 +251,8 @@ const RentCar = () => {
                         <p>Drop-off Location: {dropoffLocation}</p>
                         <p>Distance: {distance.toFixed(2)} km</p>
                         <p>Total Paid: ${totalPrice.toFixed(2)}</p>
-                        <p>We've sent the confirmation details to your email.</p>
+                        <p><strong>Payment Reference Number:</strong> {paymentReference}</p>
+                        {/* <p>We've sent the confirmation details to your email.</p> */}
                         <button
                             className="btn btn-primary"
                             onClick={() => navigate('/home')}
