@@ -8,7 +8,24 @@ import 'react-datepicker/dist/react-datepicker.css';
 const RentCar = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { vehicle } = location.state || {};
+
+    // Mock vehicle data
+    const mockVehicle = {
+        id: '1',
+        brand: 'Toyota',
+        name: 'Camry',
+        type: 'Sedan',
+        category: 'Standard',
+        dailyPrice: 59.99,
+        seatingCapacity: 5,
+        transmission: 'Automatic',
+        fuelType: 'Gasoline',
+        hasAC: true,
+        image: 'https://via.placeholder.com/300x200?text=Toyota+Camry'
+    };
+
+    // Use location state if available, otherwise use mock data
+    const { vehicle } = location.state || { vehicle: mockVehicle };
 
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date(Date.now() + 86400000)); // Default to next day
@@ -31,18 +48,6 @@ const RentCar = () => {
             setTotalPrice(days * vehicle.dailyPrice);
         }
     }, [startDate, endDate, vehicle]);
-
-    if (!vehicle) {
-        return (
-            <div className="container text-center py-5">
-                <h2>No vehicle selected</h2>
-                <p>Please go back and select a vehicle to rent.</p>
-                <button className="btn btn-primary" onClick={() => navigate('/vehicles')}>
-                    Browse Vehicles
-                </button>
-            </div>
-        );
-    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -89,9 +94,10 @@ const RentCar = () => {
                     <div className="col-md-6">
                         <div className="card mb-4">
                             <div className="card-body">
+                                <img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.name}`} className="img-fluid mb-3" />
                                 <h3 className="card-title">{vehicle.brand} {vehicle.name}</h3>
                                 <p className="text-muted">{vehicle.type} • {vehicle.category}</p>
-                                <p>Daily Rate: <strong>${vehicle.dailyPrice}</strong></p>
+                                <p>Daily Rate: <strong>${vehicle.dailyPrice.toFixed(2)}</strong></p>
                             </div>
                         </div>
 
@@ -226,7 +232,7 @@ const RentCar = () => {
                                     <h5>Pricing Breakdown</h5>
                                     <div className="d-flex justify-content-between">
                                         <span>Daily Rate:</span>
-                                        <span>${vehicle.dailyPrice}</span>
+                                        <span>${vehicle.dailyPrice.toFixed(2)}</span>
                                     </div>
                                     <div className="d-flex justify-content-between">
                                         <span>Rental Days:</span>

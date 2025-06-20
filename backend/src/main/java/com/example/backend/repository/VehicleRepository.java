@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
@@ -54,4 +55,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
             "LOWER(v.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(v.type) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Vehicle> searchVehicles(@Param("search") String search);
+
+    // Find vehicle by brand and name (for rental creation)
+    Optional<Vehicle> findByBrandAndName(String brand, String name);
+
+    // Find available vehicles by brand and name
+    Optional<Vehicle> findByBrandAndNameAndAvailableTrue(String brand, String name);
+
 }

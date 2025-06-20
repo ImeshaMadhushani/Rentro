@@ -1,21 +1,25 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.CreateRentalDTO;
 import com.example.backend.dto.RentalDTO;
-import com.example.backend.dto.RentalResponseDTO;
+import com.example.backend.dto.RentalRequestDTO;
+import com.example.backend.dto.RentalStatusUpdateDTO;
 import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.exception.VehicleNotAvailableException;
 import com.example.backend.model.Rental;
 import com.example.backend.model.User;
 import com.example.backend.model.Vehicle;
+import com.example.backend.model.Rental.RentalStatus;
 import com.example.backend.repository.RentalRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VehicleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+//import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,116 +31,205 @@ public class RentalService {
     private RentalRepository rentalRepository;
 
     @Autowired
-    private VehicleRepository vehicleRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
     @Transactional
-    public RentalResponseDTO createRental(CreateRentalDTO createRentalDTO, Long userId) {
+    public RentalDTO createRental(RentalRequestDTO rentalRequestDTO, Long userId) {
+
+        if (rentalRequestDTO.getPickupDate().isAfter(rentalRequestDTO.getReturnDate())) {
+            throw new IllegalArgumentException("Return date must be after pickup date");
+        }
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Vehicle vehicle = vehicleRepository.findById(createRentalDTO.getVehicleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+        Vehicle vehicle = vehicleRepository.findById(rentalRequestDTO.getVehicleId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Vehicle not found with id: " + rentalRequestDTO.getVehicleId()));
 
+        // Check vehicle availability for the requested dates
         // Check vehicle availability
-        if (!vehicle.getAvailable()) {
-            throw new VehicleNotAvailableException("Vehicle is not available for rental");
+        if (!isVehicleAvailable(rentalRequestDTO.getVehicleId(),
+                rentalRequestDTO.getPickupDate(),
+                rentalRequestDTO.getReturnDate())) {
+            throw new VehicleNotAvailableException("Vehicle is not available for the selected dates");
         }
 
-        // Check for overlapping rentals
-        List<Rental> overlappingRentals = rentalRepository.findOverlappingRentals(
-                vehicle,
-                createRentalDTO.getStartDate(),
-                createRentalDTO.getEndDate());
+        // Calculate rental days and total amount
+        long rentalDays = ChronoUnit.DAYS.between(
+                rentalRequestDTO.getPickupDate(),
+                rentalRequestDTO.getReturnDate()) + 1;// Include both start and end days
 
-        if (!overlappingRentals.isEmpty()) {
-            throw new VehicleNotAvailableException("Vehicle is already booked for the selected dates");
-        }
+        double totalAmount = rentalDays * vehicle.getDailyPrice();
 
-        // Calculate total price
-        long days = ChronoUnit.DAYS.between(createRentalDTO.getStartDate(), createRentalDTO.getEndDate());
-        double totalPrice = days * vehicle.getDailyPrice();
-
-        // Create and save rental
         Rental rental = new Rental();
         rental.setUser(user);
         rental.setVehicle(vehicle);
-        rental.setStartDate(createRentalDTO.getStartDate());
-        rental.setEndDate(createRentalDTO.getEndDate());
-        rental.setTotalPrice(totalPrice);
-        rental.setPaymentMethod(Rental.PaymentMethod.valueOf(createRentalDTO.getPaymentMethod()));
-        rental.setPaymentDetails(createRentalDTO.getPaymentDetails());
-        rental.setStatus(Rental.RentalStatus.CONFIRMED);
+        rental.setPickupLocation(rentalRequestDTO.getPickupLocation());
+        rental.setDropoffLocation(rentalRequestDTO.getDropoffLocation());
+        rental.setPickupDate(rentalRequestDTO.getPickupDate());
+        rental.setReturnDate(rentalRequestDTO.getReturnDate());
+        rental.setTotalAmount(totalAmount);
+        rental.setRentalDays((int) rentalDays);
+        rental.setStatus(RentalStatus.PENDING);
+        rental.setPaymentMethod(rentalRequestDTO.getPaymentMethod());
 
         Rental savedRental = rentalRepository.save(rental);
-
-        return convertToResponseDTO(savedRental);
+        return convertToDTO(savedRental);
+    }
+    
+    private boolean isVehicleAvailable(Long vehicleId, LocalDate pickupDate, LocalDate returnDate) {
+        List<Rental> overlappingRentals = rentalRepository.findOverlappingRentals(
+                vehicleId,
+                pickupDate,
+                returnDate);
+        return overlappingRentals.isEmpty();
     }
 
-    public List<RentalResponseDTO> getUserRentals(Long userId) {
+    public RentalDTO getRentalById(Long id) {
+        Rental rental = rentalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rental not found with id: " + id));
+        return convertToDTO(rental);
+    }
+
+
+
+    public List<RentalDTO> getRentalsByUser(Long userId) {
         return rentalRepository.findByUserId(userId)
                 .stream()
-                .map(this::convertToResponseDTO)
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<RentalResponseDTO> getVehicleRentals(Long vehicleId) {
+    public List<RentalDTO> getRentalsByVehicle(Long vehicleId) {
         return rentalRepository.findByVehicleId(vehicleId)
                 .stream()
-                .map(this::convertToResponseDTO)
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public RentalResponseDTO getRentalById(Long rentalId) {
-        return rentalRepository.findById(rentalId)
-                .map(this::convertToResponseDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Rental not found"));
+    public Page<RentalDTO> getAllRentals(Pageable pageable) {
+        return rentalRepository.findAll(pageable)
+                .map(this::convertToDTO);
+    }
+
+    public Page<RentalDTO> getRentalsWithFilters(
+            Long userId,
+            Long vehicleId,
+            String status,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable) {
+        return rentalRepository.findWithFilters(
+                userId,
+                vehicleId,
+                status,
+                startDate,
+                endDate,
+                pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional
-    public RentalResponseDTO cancelRental(Long rentalId, Long userId) {
-        Rental rental = rentalRepository.findById(rentalId)
-                .orElseThrow(() -> new ResourceNotFoundException("Rental not found"));
+    public RentalDTO updateRentalStatus(Long id, RentalStatusUpdateDTO statusUpdateDTO) {
+        Rental rental = rentalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rental not found with id: " + id));
 
-        if (!rental.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("User is not authorized to cancel this rental");
+        // Validate status transition
+        RentalStatus currentStatus = rental.getStatus();
+        RentalStatus newStatus;
+        try {
+            newStatus = RentalStatus.valueOf(statusUpdateDTO.getStatus().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status value: " + statusUpdateDTO.getStatus());
         }
 
-        if (rental.getStatus() != Rental.RentalStatus.CONFIRMED) {
-            throw new IllegalStateException("Only confirmed rentals can be cancelled");
+        if (!isValidStatusTransition(currentStatus, newStatus)) {
+            throw new IllegalArgumentException("Invalid status transition from " + currentStatus + " to " + newStatus);
         }
 
-        if (rental.getStartDate().isBefore(LocalDateTime.now().plusHours(24))) {
-            throw new IllegalStateException("Rental cannot be cancelled less than 24 hours before start");
+        // Special handling for CONFIRMED status
+        if (newStatus == RentalStatus.CONFIRMED) {
+            if (statusUpdateDTO.getPaymentReference() == null || statusUpdateDTO.getPaymentReference().isEmpty()) {
+                throw new IllegalArgumentException("Payment reference is required for confirming a rental");
+            }
+            rental.setPaymentReference(statusUpdateDTO.getPaymentReference());
         }
 
-        rental.setStatus(Rental.RentalStatus.CANCELLED);
+        // Update the status
+        rental.setStatus(newStatus);
+
         Rental updatedRental = rentalRepository.save(rental);
-
-        return convertToResponseDTO(updatedRental);
+        return convertToDTO(updatedRental);
     }
 
-    public List<RentalResponseDTO> getActiveRentals(Long userId) {
-        return rentalRepository.findActiveRentalsByUser(userId)
-                .stream()
-                .map(this::convertToResponseDTO)
-                .collect(Collectors.toList());
+    @Transactional
+    public void cancelRental(Long id) {
+        Rental rental = rentalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rental not found with id: " + id));
+
+        RentalStatus currentStatus = rental.getStatus();
+        if (currentStatus == RentalStatus.COMPLETED || currentStatus == RentalStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot cancel a rental that is already " + currentStatus);
+        }
+
+        rental.setStatus(RentalStatus.CANCELLED);
+        rentalRepository.save(rental);
     }
 
-    private RentalResponseDTO convertToResponseDTO(Rental rental) {
-        RentalResponseDTO dto = new RentalResponseDTO();
+    public long countRentalsByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return rentalRepository.countByUser(user);
+    }
+
+    public long countRentalsByVehicle(Long vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with id: " + vehicleId));
+        return rentalRepository.countByVehicle(vehicle);
+    }
+
+    public long countRentalsByStatus(String status) {
+        return rentalRepository.countByStatus(status);
+    }
+
+    // Helper methods
+    private RentalDTO convertToDTO(Rental rental) {
+        RentalDTO dto = new RentalDTO();
         dto.setId(rental.getId());
-        dto.setUserFullName(rental.getUser().getFullName());
-        dto.setUserEmail(rental.getUser().getEmail());
-        dto.setVehicleBrand(rental.getVehicle().getBrand());
-        dto.setVehicleName(rental.getVehicle().getName());
-        dto.setStartDate(rental.getStartDate().toString());
-        dto.setEndDate(rental.getEndDate().toString());
-        dto.setTotalPrice(rental.getTotalPrice());
-        dto.setPaymentMethod(rental.getPaymentMethod().toString());
+        dto.setUserId(rental.getUser().getId());
+        dto.setVehicleId(rental.getVehicle().getId());
+        dto.setPickupLocation(rental.getPickupLocation());
+        dto.setDropoffLocation(rental.getDropoffLocation());
+        dto.setPickupDate(rental.getPickupDate());
+        dto.setReturnDate(rental.getReturnDate());
+        dto.setTotalAmount(rental.getTotalAmount());
+        dto.setRentalDays(rental.getRentalDays());
         dto.setStatus(rental.getStatus().toString());
+        dto.setPaymentMethod(rental.getPaymentMethod());
+        dto.setPaymentReference(rental.getPaymentReference());
+        dto.setCreatedAt(rental.getCreatedAt());
+        dto.setUpdatedAt(rental.getUpdatedAt());
         return dto;
+    }
+
+    private boolean isValidStatusTransition(RentalStatus currentStatus, RentalStatus newStatus) {
+        // Define valid status transitions
+        switch (currentStatus) {
+            case PENDING:
+                return newStatus == RentalStatus.CONFIRMED || newStatus == RentalStatus.CANCELLED;
+            case CONFIRMED:
+                return newStatus == RentalStatus.IN_PROGRESS || newStatus == RentalStatus.CANCELLED;
+            case IN_PROGRESS:
+                return newStatus == RentalStatus.COMPLETED;
+            case COMPLETED:
+            case CANCELLED:
+                return false; // Final states
+            default:
+                throw new IllegalArgumentException("Unknown status: " + currentStatus);
+        }
     }
 }

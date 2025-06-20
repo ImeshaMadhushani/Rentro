@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -101,4 +102,14 @@ public class UserService {
         }
         return false;
     }
+
+    public Long getUserIdByEmail(String email) {
+    Optional<User> userOpt = userRepository.findByEmail(email);
+    if (userOpt.isPresent()) {
+        return userOpt.get().getId();
+    } else {
+        throw new UsernameNotFoundException("User not found with email: " + email);
+    }
+}
+
 }

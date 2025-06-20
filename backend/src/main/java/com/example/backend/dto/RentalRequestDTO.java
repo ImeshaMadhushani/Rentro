@@ -5,24 +5,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RentalDTO {
-    private Long id;
-    private Long userId;
+public class RentalRequestDTO {
     private Long vehicleId;
     private String pickupLocation;
     private String dropoffLocation;
     private LocalDate pickupDate;
     private LocalDate returnDate;
-    private Double totalAmount;
-    private Integer rentalDays;
-    private String status;
     private String paymentMethod;
-    private String paymentReference;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
